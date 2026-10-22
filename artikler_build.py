@@ -16,6 +16,10 @@ Støttet Markdown: ## / ### overskrifter, avsnitt, - og 1. lister, tabeller med 
     [[bestill]]      – knapp/boks som leder til bestillingsskjemaet
     [[kalkulator]]   – «hvor mye ved trenger jeg»-kalkulator
     [[kilder]]       – (ikke nødvendig) kilder skrives som vanlig liste under «## Kilder»
+    [[kontakt]]      – (rad/) boks med lenke til tjenesten og kontaktskjemaet
+
+Hjelpeartiklene for firmatjenestene ligger i rad/ (adresse /rad/<fil>/) og har i tillegg
+    tjeneste: vintertjenester     (slug i firma_innhold.SERVICES; gir lenke og forhåndsvalgt tjeneste)
 """
 import html
 import re
@@ -103,9 +107,10 @@ def slugify(t):
     return re.sub(r"[^a-z0-9]+", "-", t).strip("-")[:60]
 
 
-def load():
+def load(d=DIR):
+    """Leser alle .md-filer i mappa d (standard artikler/; rad/ brukes til firmaets hjelpeartikler)."""
     arts = []
-    for f in sorted(DIR.glob("*.md")):
+    for f in sorted(Path(d).glob("*.md")):
         raw = f.read_text(encoding="utf-8")
         m = re.match(r"---\n(.*?)\n---\n(.*)", raw, re.S)
         if not m:
