@@ -40,7 +40,7 @@ Testversjonen har en gul stripe øverst og blir ikke indeksert av Google. Den br
 
 ## Før lansering
 
-1. **Domenet:** Bestem om follobjorkeved.no skal sende videre (301) til folloes.no/salg-av-bjorkeved/ og de samme undersidene. Ligger begge sidene ute med samme tekst, ser Google dem som duplikater.
+1. **Domenet (bestemt 22. okt. 2026):** follobjorkeved.no skal sende videre (301) til folloes.no: forsiden til /salg-av-bjorkeved/ og undersidene til samme adresse på folloes.no. Gjøres samme dag som den nye siden går live på folloes.no, ikke før, ellers forsvinner vedsiden i mellomtiden.
 2. **Publisering:** Det er ikke satt opp noen workflow ennå. Oppsettet fra follobjorkeved (GitHub Pages, `.github/workflows/pages.yml` i det repoet) kan kopieres med `SITE_URL=https://folloes.no` og `cname: folloes.no`.
 3. **Statistikk:** `GOATCOUNTER` i `config.py` er tom. Lag en ny kode for folloes.no.
 4. **Kontaktskjemaet** bruker samme FormSubmit-adresse som vedbestillingene (`ORDER_EMAIL`, kopi til `ORDER_CC`).
