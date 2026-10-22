@@ -171,6 +171,8 @@ def tel_href():
 
 # Bjørkeved-delen av nettstedet. Forsiden for veden ligger på den gamle adressen fra folloes.no.
 VED = "/salg-av-bjorkeved/"
+# Garasjevask er også en egen del (tidligere garasjevasken.no).
+GV = "/garasjevask/"
 
 
 def nav_services():
@@ -193,12 +195,25 @@ def mainnav(path):
         <li{li_cls}><a class="sub-toggle" href="/tjenester/"{cur("/tjenester/")} aria-haspopup="true">Tjenester</a>
           <ul class="submenu">{subs}<li><a href="/tjenester/">Alle tjenester</a></li></ul></li>
         <li{ved_cls}><a href="{VED}"{cur(VED)}>Bjørkeved</a></li>
+        <li><a href="{GV}"{cur(GV)}>Garasjevask</a></li>
         <li><a href="/referanser/"{cur("/referanser/")}>Referanser</a></li>
         <li><a href="/om-oss/"{cur("/om-oss/")}>Om oss</a></li>
         <li><a href="/kontakt-oss/"{cur("/kontakt-oss/")}>Kontakt</a></li>
       </ul>
       <p class="nav-tel"><a class="btn btn-sm" href="{tel_href()}" data-track="tel">Ring {CO['phone_display']}</a></p>
     </nav>"""
+
+
+def gv_subbar():
+    return f"""<div class="subbar">
+  <nav class="wrap subbar-in" aria-label="Garasjevask">
+    <strong>Garasjevask</strong>
+    <a href="{GV}#priser">Priser</a>
+    <a href="{GV}#priskalkulator">Priskalkulator</a>
+    <a href="{GV}#risiko">Risiko og forberedelser</a>
+    <a class="btn btn-sm" href="{GV}#kontakt">Be om tilbud</a>
+  </nav>
+</div>"""
 
 
 def ved_subbar():
@@ -216,7 +231,7 @@ def ved_subbar():
 
 
 def head(title, desc, path, ld="", noindex=False, section="ved", og_image="", preload=""):
-    """section: "ved" gir undermenyen for bjørkeved, "firma" gir bare hovedmenyen."""
+    """section: "ved" gir undermenyen for bjørkeved, "garasje" for garasjevask, "firma" gir bare hovedmenyen."""
     canonical = f"{URL}{path}"
     robots = '<meta name="robots" content="noindex">' if noindex or TEST else ""
     # Delingsbildene er JPEG 1200×630 (WebP vises ikke overalt i Facebook, WhatsApp og LinkedIn).
@@ -276,7 +291,7 @@ def head(title, desc, path, ld="", noindex=False, section="ved", og_image="", pr
     {mainnav(path)}
   </div>
 </header>
-{ved_subbar() if section == "ved" else ""}
+{ved_subbar() if section == "ved" else gv_subbar() if section == "garasje" else ""}
 <main id="innhold">
 """
 
@@ -309,6 +324,11 @@ def footer(section="ved"):
     <div>
       <p class="footer-h">Tjenester</p>
       <ul>{services}</ul>
+      <p class="footer-h">Garasjevask</p>
+      <ul>
+        <li><a href="{GV}">Garasjevask for borettslag og næring</a></li>
+        <li><a href="{GV}#priskalkulator">Priskalkulator</a></li>
+      </ul>
     </div>
     <div>
       <p class="footer-h">Bjørkeved</p>
@@ -1541,7 +1561,7 @@ def llms_txt():
            f"- [Gratis verktøy]({URL}/verktoy/): vedkalkulator og strøm-mot-ved som kan bygges inn på andre nettsider",
            f"- [Åpne data]({URL}/data/): vedfyring per kommune i Follo som CSV (CC BY 4.0)",
            f"- [Presse]({URL}/presse/): tall, bilder med fri bruk og kontakt"])
-    services = "\n".join(f"- [{x['name']}]({URL}/{x['slug']}/): {x['card']}" for x in F.SERVICES)
+    services = "\n".join(f"- [{x['name']}]({URL}/{x['slug']}/): {x['card']}" for x in F.SERVICES + [F.GARASJEVASK_SIDE])
     return f"""# {CO['legal_name']}
 
 > {CO['legal_name']} (tidligere Min Eiendomsservice AS) leverer vaktmester- og vedlikeholdstjenester til privatpersoner, borettslag og bedrifter i Follo, og selger bjørkeved under navnet {C.BRAND}. Kontakt: {CO['phone']}, {CO['email']}, [kontaktskjema]({URL}/kontakt-oss/).

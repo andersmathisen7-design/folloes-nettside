@@ -537,3 +537,19 @@ textarea.embed { width: 100%; font-family: ui-monospace, Menlo, Consolas, monosp
   .top-tel { padding: 8px 6px; }
 }
 .test-banner { background: #ffd400; color: #111; text-align: center; font-weight: 700; font-size: .9rem; padding: 6px 16px; }
+
+/* Garasjevask: pristabeller og kalkulator */
+.gv-tables, .gv-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.gv-facts { grid-template-columns: repeat(3, 1fr); margin-top: 20px; }
+.gv-facts.two { grid-template-columns: 1fr 1fr; margin-top: 0; }
+.gv-table table { width: 100%; border-collapse: collapse; margin: 0 0 10px; }
+.gv-table th, .gv-table td { text-align: left; padding: 9px 4px; border-bottom: 1px solid var(--line); }
+.gv-table td + td, .gv-table th + th { text-align: right; font-weight: 700; }
+.gv-calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+.gv-sum { background: #f2faea; border-left: 4px solid var(--lime); border-radius: 10px; padding: 14px 18px; margin: 18px 0; }
+.gv-sum span { display: block; font-size: .9rem; color: var(--muted); }
+.gv-sum strong { display: block; font-size: 1.9rem; line-height: 1.2; color: var(--green); }
+.gv-sum small { color: var(--muted); }
+.task-grid li > a { display: block; color: inherit; text-decoration: none; }
+.task-grid li > a:hover h3 { color: var(--green); }
+@media (max-width: 900px) { .gv-tables, .gv-facts, .gv-facts.two, .gv-calc-grid { grid-template-columns: 1fr; gap: 20px; } }

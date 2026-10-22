@@ -59,6 +59,9 @@ def svc_url(s):
     return f"/{s['slug']}/"
 
 
+GV = "/garasjevask/"
+
+
 def services():
     return F.SERVICES
 
@@ -134,6 +137,8 @@ def contact_form(selected=""):
     for s in services():
         sel = " selected" if s["name"] == selected else ""
         opts.append(f'<option{sel}>{esc(s["name"])}</option>')
+    sel = " selected" if selected == "Garasjevask" else ""
+    opts.append(f'<option{sel}>Garasjevask</option>')
     opts.append('<option>Annet</option>')
     return f"""<form id="kontaktskjema" class="form card contact-form" novalidate>
       <p class="contact-form-h">Send oss en melding</p>
@@ -192,6 +197,27 @@ def ved_promo():
       <div class="hero-cta">
         <a class="btn btn-lg" href="{B.VED}#bestill">Bestill bjørkeved</a>
         <a class="btn btn-ghost btn-lg" href="{B.VED}#priser">Se priser</a>
+      </div>
+    </div>
+  </div>
+</section>"""
+
+
+def garasjevask_promo():
+    G = F.GARASJEVASK
+    fra = min(p for u in G["underlag"] for _, p in u["tiers"])
+    return f"""
+<section class="section alt gv-promo">
+  <div class="wrap ved-promo-grid">
+    {img("garasjevask", "Garasjevasker i et garasjeanlegg", sizes="(min-width: 900px) 50vw, 100vw", cls="split-img")}
+    <div>
+      <p class="kicker">Garasjevask</p>
+      <h2>Garasjevask for borettslag og næring</h2>
+      <p>Vi feier og vasker garasjeanlegg med en garasjevasker som suger opp det skitne vannet igjen. Du betaler en fast pris per parkeringsplass, så styret vet kostnaden på forhånd.</p>
+      <p class="ved-price">Fra <strong>{fra} kr</strong> per parkeringsplass</p>
+      <div class="hero-cta">
+        <a class="btn btn-lg" href="{GV}#priskalkulator">Regn ut pris</a>
+        <a class="btn btn-ghost btn-lg" href="{GV}">Les mer om garasjevask</a>
       </div>
     </div>
   </div>
@@ -292,9 +318,9 @@ def page_forside():
     <p class="center"><a href="/referanser/">Se alle referanser →</a></p>
   </div>
 </section>"""
-    body = hero + intro + svc + ved_promo() + refs + contact_section()
-    desc = ("Vaktmester- og vedlikeholdstjenester i Follo: brøyting og strøing, feiing og spyling, gartner, renhold, "
-            "HMS, matteutleie, trefelling og bjørkeved. For private, borettslag og bedrifter.")
+    body = hero + intro + svc + ved_promo() + garasjevask_promo() + refs + contact_section()
+    desc = ("Vaktmester i Follo: brøyting, feiing, garasjevask, gartner, renhold, HMS, trefelling og bjørkeved. "
+            "For private, borettslag og bedrifter.")
     ld = B.ld_tags(B.business_ld(), {
         "@context": "https://schema.org", "@type": "WebSite", "name": CO["legal_name"], "url": f"{B.URL}/"})
     return (B.head(f"Vaktmester og vedlikehold i Follo | {CO['legal_name']}", desc, "/", ld,
@@ -310,14 +336,14 @@ def page_tjenester():
   <div class="wrap">{service_cards(services(), h="h2")}</div>
 </section>""" + contact_section()
     ld = B.ld_tags(B.breadcrumb_ld("Tjenester", path, parents=()))
-    return (B.head(title("Tjenester"), "Alle tjenestene til Follo Eiendomsservice AS: vaktmester, vintertjenester, feiing og spyling, gartner, renhold, HMS, matteutleie, trefelling og bjørkeved.",
+    return (B.head(title("Tjenester"), "Alle tjenestene til Follo Eiendomsservice AS: vaktmester, vintertjenester, feiing og spyling, garasjevask, gartner, renhold, HMS, matteutleie, trefelling og bjørkeved.",
                    path, ld, section="firma", preload=preload("feiemaskin-2")) + body + B.footer("firma"))
 
 
-def page_service(s):
+def page_service(s, extra="", parents=(("Tjenester", "/tjenester/"),), section="firma"):
     path = svc_url(s)
     hero = page_hero(s["h1"], s.get("lead", ""), s.get("hero_img") or s.get("card_img"),
-                     crumb=crumbs(("Tjenester", "/tjenester/"), (s["name"], "")))
+                     crumb=crumbs(*parents, (s["name"], "")))
     blocks = []
     for i, sec in enumerate(s.get("sections", [])):
         text = paras(sec.get("text", []))
@@ -329,7 +355,10 @@ def page_service(s):
     </div>""")
     tasks = ""
     if s.get("tasks"):
-        items = "".join(f"""<li>{img(t.get('img'), "", sizes="(min-width: 1000px) 280px, 50vw")}<h3>{esc(t['name'])}</h3></li>""" for t in s["tasks"])
+        def task(t):
+            inner = f"""{img(t.get('img'), "", sizes="(min-width: 1000px) 280px, 50vw")}<h3>{esc(t['name'])}</h3>"""
+            return f'<li><a href="{t["href"]}">{inner}</a></li>' if t.get("href") else f"<li>{inner}</li>"
+        items = "".join(task(t) for t in s["tasks"])
         tasks = f"""
 <section class="section alt">
   <div class="wrap">
@@ -347,11 +376,84 @@ def page_service(s):
   </div>
 </section>"""
     body = (hero + f'\n<section class="section"><div class="wrap splits">{"".join(blocks)}</div></section>'
-            + tasks + contact_section(selected=s["name"]) + more)
-    ld = B.ld_tags(service_ld(s), B.breadcrumb_ld(s["name"], path, parents=(("Tjenester", "/tjenester/"),)))
+            + extra + tasks + contact_section(selected=s["name"]) + more)
+    ld = B.ld_tags(service_ld(s), B.breadcrumb_ld(s["name"], path, parents=parents))
     key = s.get("hero_img") or s.get("card_img")
-    return (B.head(title(s["title"]), s["desc"], path, ld, section="firma",
+    return (B.head(title(s["title"]), s["desc"], path, ld, section=section,
                    og_image=og(key), preload=preload(key)) + body + B.footer("firma"))
+
+
+def kr(n):
+    return f"{n:,}".replace(",", "\u00a0") + "\u00a0kr"
+
+
+def garasjevask_extra():
+    """Priser, priskalkulator, risiko og forberedelser på /garasjevask/ (fra garasjevasken.no)."""
+    G = F.GARASJEVASK
+    tables = []
+    for u in G["underlag"]:
+        rows, lo = [], 1
+        for hi, pris in u["tiers"]:
+            rows.append(f"<tr><td>{lo}–{hi} plasser</td><td>{pris} kr</td></tr>")
+            lo = hi + 1
+        rows.append(f"<tr><td>Over {lo - 1} plasser</td><td>Pris på forespørsel</td></tr>")
+        tables.append(f"""<div class="card gv-table">
+      <h3>{esc(u['name'])} <span class="muted">({esc(u['who'])})</span></h3>
+      <table><thead><tr><th scope="col">Antall plasser</th><th scope="col">Pris per plass</th></tr></thead>
+      <tbody>{"".join(rows)}</tbody></table>
+      <p class="muted small">Minstepris: {kr(G['minstepris'])}</p>
+    </div>""")
+    lst = lambda xs: "".join(f"<li>{esc(x)}</li>" for x in xs)
+    rabatt = "".join(f"<li>{y} års binding: {r} %</li>" for y, r in G["binding"] if y)
+    u_opts = "".join(f'<option value="{u["id"]}">{esc(u["name"])} ({esc(u["who"])})</option>' for u in G["underlag"])
+    b_opts = "".join(f'<option value="{r}">{"Ingen binding" if not y else f"{y} år ({r} %)"}</option>' for y, r in G["binding"])
+    data = esc(B.json.dumps({"min": G["minstepris"], "km": G["km_pris"],
+                             "u": {u["id"]: {"name": u["name"], "tiers": u["tiers"]} for u in G["underlag"]}}))
+    return f"""
+<section class="section alt" id="priser">
+  <div class="wrap">
+    <div class="section-head center">
+      <p class="kicker">Priser</p>
+      <h2>Forutsigbar pris per parkeringsplass</h2>
+      <p class="muted">Vi priser garasjevask per parkeringsplass, så styret kan regne ut kostnaden på forhånd. Én parkeringsplass er ca. {G['m2_per_plass']} m². Større anlegg gir lavere pris per plass, og vi gir rabatt på avtaler om jevnlig vask.</p>
+    </div>
+    <div class="gv-tables">{"".join(tables)}</div>
+    <div class="gv-facts">
+      <div class="card"><h3>Dette inngår</h3><ul class="checks dark">{lst(G['inngar'])}</ul></div>
+      <div class="card"><h3>Utstyr vi har med</h3><ul class="checks dark">{lst(G['utstyr'])}</ul></div>
+      <div class="card"><h3>Rabatt ved binding</h3><ul class="checks dark">{rabatt}</ul>
+        <p class="muted small">Oppmøte: {G['km_pris']} kr per km fra Ås, regnet én vei.</p></div>
+    </div>
+  </div>
+</section>
+<section class="section" id="priskalkulator">
+  <div class="wrap gv-calc-grid">
+    <div>
+      <p class="kicker">Priskalkulator</p>
+      <h2>Regn ut en veiledende pris</h2>
+      <p>Velg underlag, antall plasser og avstand fra Ås. Prisen er veiledende. Endelig pris avtales etter befaring.</p>
+      <p>Trykk «Be om tilbud», så fyller vi ut kontaktskjemaet for deg. Har du bilder eller tegninger av garasjen, kan du sende dem til <a href="mailto:{B.CO['email']}">{B.CO['email']}</a>.</p>
+    </div>
+    <form class="card form gv-calc" id="gv-calc" data-gv="{data}" novalidate>
+      <label for="gv-underlag">Underlag</label>
+      <select id="gv-underlag" name="underlag">{u_opts}</select>
+      <div class="row2">
+        <div><label for="gv-plasser">Antall parkeringsplasser</label><input id="gv-plasser" name="plasser" type="number" inputmode="numeric" min="1" value="40"></div>
+        <div><label for="gv-km">Km fra Ås (én vei)</label><input id="gv-km" name="km" type="number" inputmode="numeric" min="0" value="10"></div>
+      </div>
+      <label for="gv-binding">Binding</label>
+      <select id="gv-binding" name="binding">{b_opts}</select>
+      <div class="gv-sum" aria-live="polite"><span>Veiledende pris</span><strong id="gv-total">–</strong><small id="gv-detail"></small></div>
+      <button class="btn btn-block btn-lg" type="submit">Be om tilbud</button>
+    </form>
+  </div>
+</section>
+<section class="section alt" id="risiko">
+  <div class="wrap gv-facts two">
+    <div class="card"><h2 class="h3">Risiko og hensyn</h2><ul class="checks dark">{lst(G['risiko'])}</ul></div>
+    <div class="card"><h2 class="h3">Dette gjør dere før vasken</h2><ul class="checks dark">{lst(G['forberedelser'])}</ul></div>
+  </div>
+</section>"""
 
 
 def page_om_oss():
@@ -437,9 +539,10 @@ def write_all(build):
     B.write("tjenester/index.html", page_tjenester())
     for s in real_services():
         B.write(f"{s['slug']}/index.html", page_service(s))
+    B.write("garasjevask/index.html", page_service(F.GARASJEVASK_SIDE, garasjevask_extra(), parents=(), section="garasje"))
     B.write("om-oss/index.html", page_om_oss())
     B.write("referanser/index.html", page_referanser())
     B.write("kontakt-oss/index.html", page_kontakt())
     B.write("takk-for-din-henvendelse/index.html", page_takk())
     return (["/", "/tjenester/"] + [svc_url(s) for s in real_services()]
-            + ["/om-oss/", "/referanser/", "/kontakt-oss/"])
+            + [GV, "/om-oss/", "/referanser/", "/kontakt-oss/"])

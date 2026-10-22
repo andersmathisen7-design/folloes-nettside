@@ -512,3 +512,51 @@
       });
   });
 })();
+
+// Priskalkulator for garasjevask (/garasjevask/). Tallene kommer fra GARASJEVASK i firma_innhold.py.
+(function () {
+  var form = document.getElementById("gv-calc");
+  if (!form) return;
+  var G = JSON.parse(form.getAttribute("data-gv"));
+  var out = document.getElementById("gv-total"), detail = document.getElementById("gv-detail");
+  var fmt = function (n) { return Math.round(n).toLocaleString("nb-NO") + " kr"; };
+  var last = null;
+  function calc() {
+    var u = G.u[form.underlag.value];
+    var n = Math.max(0, Math.floor(+form.plasser.value || 0));
+    var km = Math.max(0, +form.km.value || 0), rabatt = +form.binding.value || 0;
+    var tier = null;
+    for (var i = 0; i < u.tiers.length; i++) if (n <= u.tiers[i][0]) { tier = u.tiers[i]; break; }
+    if (!n) { out.textContent = "–"; detail.textContent = "Skriv antall parkeringsplasser."; last = null; return; }
+    if (!tier) {
+      out.textContent = "Pris på forespørsel";
+      detail.textContent = "Over " + u.tiers[u.tiers.length - 1][0] + " plasser gir vi pris etter befaring.";
+      last = { u: u, n: n, km: km, rabatt: rabatt, total: null };
+      return;
+    }
+    var vask = Math.max(n * tier[1], G.min), reise = km * G.km;
+    var total = (vask + reise) * (1 - rabatt / 100);
+    out.textContent = fmt(total);
+    detail.textContent = n + " plasser × " + tier[1] + " kr" + (n * tier[1] < G.min ? " (minstepris " + fmt(G.min) + ")" : "") +
+      " + oppmøte " + fmt(reise) + (rabatt ? ", minus " + rabatt + " % for binding" : "");
+    last = { u: u, n: n, km: km, rabatt: rabatt, total: total };
+  }
+  form.addEventListener("input", calc);
+  form.addEventListener("change", calc);
+  calc();
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    calc();
+    var k = document.getElementById("kontaktskjema");
+    if (!k) return;
+    if (last) {
+      k.tjeneste.value = "Garasjevask";
+      k.melding.value = "Vi ønsker tilbud på garasjevask.\n" + last.u.name + ", " + last.n + " parkeringsplasser, ca. " + last.km +
+        " km fra Ås" + (last.rabatt ? ", " + last.rabatt + " % binding" : "") + ".\nVeiledende pris fra kalkulatoren: " +
+        (last.total === null ? "pris på forespørsel" : fmt(last.total)) +
+        ".\nVann i eller ved garasjen: \nKum for skittent vann: \nAdresse til anlegget: ";
+    }
+    document.getElementById("kontakt").scrollIntoView({ behavior: "smooth" });
+    k.navn.focus({ preventScroll: true });
+  });
+})();

@@ -32,6 +32,7 @@ INTRO = {
         "Vaktmestertjenester – gressklipping, vedlikehold av uteareal og bortkjøring av avfall.",
         "Vintertjenester – som strøing og måking.",
         "Feiing og spyling.",
+        "Garasjevask – fast pris per parkeringsplass.",
         "Renhold – kontorvask, vask av kantine/kjøkken, trappevask, vindusvask, fasadevask.",
         "HMS – brannsikring og kontroll av lekeplasser.",
         "Matteutleie – for renere lokaler og et godt førsteinntrykk.",
@@ -160,7 +161,7 @@ SERVICES = [
         ],
         "tasks": [
             {"name": "Vårfeiing", "img": "feiemaskin-5"},
-            {"name": "Garasjevask", "img": "garasjeanlegg"},
+            {"name": "Garasjevask", "img": "garasjeanlegg", "href": "/garasjevask/"},
             {"name": "Fasadevask", "img": "fasadevask"},
             {"name": "Spyling av takrenner", "img": "takrennerens"},
             {"name": "Takvask", "img": "lift-tak"},
@@ -388,5 +389,85 @@ ABOUT = {
     "text": [
         "Tidligere Min Eiendomsservice AS har nå byttet navn til Follo Eiendomsservice AS! Vårt mål er å levere vaktmester- og vedlikeholdstjenester til privatpersoner, borettslag og bedrifter, med hovedfokus på Follo og nærliggende områder. Dette er vårt satsingsområde.",
         "Vi legger vår stolthet i å levere kvalitetsarbeid hver gang!",
+    ],
+}
+
+# Garasjevask er en egen del av nettstedet, som bjørkeved (ikke blant tjenestene).
+GARASJEVASK_SIDE = {
+    "slug": "garasjevask",
+    "name": "Garasjevask",
+    "title": "Garasjevask for borettslag og næring | Follo Eiendomsservice AS",
+    "desc": "Profesjonell garasjevask for borettslag, sameier og næringsbygg i Follo. Fast pris per parkeringsplass, og en priskalkulator som gir deg en veiledende pris med en gang.",
+    "h1": "Profesjonell garasjevask for borettslag og næring",
+    "lead": "Vi leverer grundig garasjevask med fast pris per parkeringsplass. Effektiv gjennomføring, skånsom behandling og forutsigbare kostnader.",
+    "card": "Grundig vask av garasjeanlegg for borettslag, sameier og næringsbygg, med fast pris per parkeringsplass. Regn ut en veiledende pris med en gang.",
+    "card_img": "garasjevask",
+    "hero_img": "garasjevask",
+    "sections": [
+        {
+            "h2": "Profesjonell og effektiv garasjevask",
+            "text": [
+                "Vi tilbyr profesjonell og effektiv garasjevask for borettslag, sameier, næringsbygg og gårdsanlegg. Over tid samler garasjeanlegg store mengder sand, støv, eksosrester og forurensning som påvirker både bygg, biler og inneklima.",
+                "Med riktig utstyr og erfaring sørger vi for en grundig rengjøring som gir et synlig og varig resultat, uten unødvendig belastning på betong eller asfalt. Vi jobber strukturert, effektivt og med minst mulig ulempe for dem som bruker anlegget.",
+                "- Forlenger levetiden på betong og asfalt",
+                "- Reduserer slitasje på biler og dekk",
+                "- Gir et tryggere og mer trivelig miljø",
+                "- Gir et bedre førsteinntrykk for beboere og besøkende",
+            ],
+            "img": "garasjeanlegg",
+        },
+        {
+            "h2": "Slik utfører vi garasjevasken",
+            "text": [
+                "Arbeidet starter med grundig grovrengjøring og fjerning av løsmasser. Deretter vaskes gulvene med en profesjonell garasjevasker som suger opp det skitne vannet igjen. Da blir verken skitt eller vann liggende igjen i anlegget.",
+                "Metoden er effektiv, skånsom og passer for både betong og asfalt.",
+                "- Bedre inneklima og mindre støv",
+                "- Mindre behov for vedlikehold",
+                "- Lengre levetid på gulv og overflater",
+                "- Et renere og mer representativt bygg",
+            ],
+            "img": "garasjevask",
+        },
+        {
+            "h2": "Hvorfor velge profesjonell garasjevask?",
+            "text": [
+                "Garasjeanlegg utsettes hver dag for sand, fukt, veisalt og eksos. Uten jevnlig vask bygger dette seg opp og gir økt slitasje på gulv, konstruksjon og kjøretøy.",
+            ],
+            "img": None,
+        },
+    ],
+    "tasks": [],
+}
+
+# Garasjevask: priser og kalkulator (fra garasjevasken.no, oktober 2026).
+# Tabellene på /garasjevask/ og priskalkulatoren bruker de samme tallene.
+GARASJEVASK = {
+    "m2_per_plass": 25,
+    "minstepris": 8500,
+    "km_pris": 13,  # per km fra Ås, én vei
+    "underlag": [
+        {"id": "betong", "name": "Betongunderlag", "who": "1 person",
+         # (til og med antall plasser, pris per plass); over siste grense: pris på forespørsel
+         "tiers": [(50, 230), (150, 220), (400, 205)]},
+        {"id": "asfalt", "name": "Asfaltunderlag", "who": "2 personer",
+         "tiers": [(50, 270), (100, 255), (200, 235)]},
+    ],
+    "binding": [(0, 0), (2, 10), (3, 15), (5, 20)],  # (år, rabatt i prosent)
+    "inngar": [
+        "Feiing og grovrengjøring",
+        "Fjerning av støv, sand og grus",
+        "Vask med vann som suges opp igjen med garasjevasker",
+    ],
+    "utstyr": ["Garasjevasker", "Kost og feieutstyr", "Slanger og vanntilkobling"],
+    "risiko": [
+        "Glatte gulv under og etter vask",
+        "Elektriske installasjoner",
+        "Eldre betonggulv",
+        "Avrenning av skittent vann",
+    ],
+    "forberedelser": [
+        "Garasjen tømmes for løse gjenstander",
+        "Tilgang til vann og strøm",
+        "Porten må kunne stå åpen under vask",
     ],
 }
