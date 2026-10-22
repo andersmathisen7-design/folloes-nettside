@@ -1,5 +1,5 @@
-@font-face { font-family: "Oswald"; src: url(/fonts/oswald-latin.woff2) format("woff2"); font-weight: 400 700; font-display: swap; }
-@font-face { font-family: "Nunito"; src: url(/fonts/nunito-latin.woff2) format("woff2"); font-weight: 400 800; font-display: swap; }
+@font-face { font-family: "Oswald"; src: url(../fonts/oswald-latin.woff2) format("woff2"); font-weight: 400 700; font-display: swap; }
+@font-face { font-family: "Nunito"; src: url(../fonts/nunito-latin.woff2) format("woff2"); font-weight: 400 800; font-display: swap; }
 :root {
   /* Fargene fra folloes.no: svart, grått og grønt. --green er den mørke grunnfargen (svart), --green-2 er lenker og små detaljer. */
   --bg: #ffffff;
@@ -536,3 +536,4 @@ textarea.embed { width: 100%; font-family: ui-monospace, Menlo, Consolas, monosp
   .menu-btn span { margin-right: 6px; }
   .top-tel { padding: 8px 6px; }
 }
+.test-banner { background: #ffd400; color: #111; text-align: center; font-weight: 700; font-size: .9rem; padding: 6px 16px; }

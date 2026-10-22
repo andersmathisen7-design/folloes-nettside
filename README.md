@@ -22,6 +22,11 @@ python3 sjekk.py     # døde lenker, manglende bilder og ankre, én <h1> per sid
 cd public && python3 -m http.server 8000   # se siden på http://localhost:8000
 ```
 
+## Testside
+
+`./publiser-test.sh` bygger en testversjon og legger den på `gh-pages`-grenen: **https://andersmathisen7-design.github.io/folloes-nettside/**.
+Testversjonen har en gul stripe øverst og blir ikke indeksert av Google. Den bruker ikke den ekte leveringskalenderen, og skjemaene går bare til `ORDER_EMAIL` (ikke kopi til firmaet). Det brukes ikke GitHub Actions.
+
 ## Endringer fra folloes.no (UX)
 
 - Overskriften på forsiden sier hva firmaet gjør, ikke bare navnet. Knappene «Få et uforpliktende tilbud» og «Ring» står øverst.

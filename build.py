@@ -29,6 +29,12 @@ TODAY = date.today().isoformat()
 URL = (os.environ.get("SITE_URL") or C.SITE_URL).rstrip("/")
 BASE = os.environ.get("BASE_PATH", "").rstrip("/")
 DOMAIN = URL.split("//", 1)[-1]
+# TESTSIDE=1 lager en testversjon (GitHub Pages): ingen indeksering, ingen ekte leveringskalender,
+# og skjemaene går bare til ORDER_EMAIL (ikke kopi til firmaet).
+TEST = os.environ.get("TESTSIDE") == "1"
+if TEST:
+    C.DELIVERY_DAYS = dict(C.DELIVERY_DAYS, calendar_url="")
+    C.ORDER_CC = []
 P = C.PRODUCT
 CO = C.COMPANY
 
@@ -212,7 +218,7 @@ def ved_subbar():
 def head(title, desc, path, ld="", noindex=False, section="ved", og_image="", preload=""):
     """section: "ved" gir undermenyen for bjørkeved, "firma" gir bare hovedmenyen."""
     canonical = f"{URL}{path}"
-    robots = '<meta name="robots" content="noindex">' if noindex else ""
+    robots = '<meta name="robots" content="noindex">' if noindex or TEST else ""
     # Delingsbildene er JPEG 1200×630 (WebP vises ikke overalt i Facebook, WhatsApp og LinkedIn).
     og_image = og_image or ("/img/og-bjorkeved-follo.jpg" if section == "ved" else "/img/firma/og-ansatte.jpg")
     if section == "ved" and not preload and path == VED:
@@ -253,6 +259,7 @@ def head(title, desc, path, ld="", noindex=False, section="ved", og_image="", pr
 </head>
 <body class="s-{section}">
 <a class="skip" href="#innhold">Hopp til innhold</a>
+{'<div class="test-banner">Testside. Dette er ikke den ekte nettsiden. Skjemaene sendes bare til utvikleren, og leveringsdagene er ikke ekte.</div>' if TEST else ''}
 <div class="topstrip">
   <div class="wrap topstrip-in">
     <p>Vaktmester- og vedlikeholdstjenester i Follo · {esc(CO['street'])}, {CO['postal_code']} {esc(CO['city'])}</p>
@@ -1582,6 +1589,8 @@ def sitemap(paths):
 
 
 def robots():
+    if TEST:
+        return "User-agent: *\nDisallow: /\n"
     return f"User-agent: *\nAllow: /\nDisallow: {BASE}/takk/\nDisallow: {BASE}/admin/\n\nSitemap: {URL}/sitemap.xml\n"
 
 
