@@ -101,7 +101,7 @@ DELIVERY_DAYS = {
 }
 
 # Google Search Console-bekreftelse (meta-tag på forsiden).
-GOOGLE_SITE_VERIFICATION = "vnXKmoMZizKbBLImYNoyt1EmqXKDaXkpEYQngFIkxhA"
+GOOGLE_SITE_VERIFICATION = ""  # Koden for follobjorkeved.no gjelder ikke folloes.no. Hent en ny i Search Console.
 
 # Besøksstatistikk (GoatCounter: gratis, uten cookies, trenger ikke samtykkebanner).
 # follobjorkeved.no teller under "follobjorkeved". Lag en egen kode for folloes.no før lansering,

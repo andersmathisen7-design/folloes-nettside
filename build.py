@@ -97,7 +97,7 @@ def product_ld():
             "price": str(P["price"]),
             "priceCurrency": "NOK",
             "availability": "https://schema.org/InStock",
-            "url": f"{URL}/#bestill",
+            "url": f"{URL}{VED}#bestill",
             "seller": {"@id": f"{URL}/#business"},
             "areaServed": "Follo",
             **({"shippingDetails": {
@@ -209,10 +209,12 @@ def ved_subbar():
 </div>"""
 
 
-def head(title, desc, path, ld="", noindex=False, section="ved", og_image="/img/og-bjorkeved-follo.jpg", preload=""):
+def head(title, desc, path, ld="", noindex=False, section="ved", og_image="", preload=""):
     """section: "ved" gir undermenyen for bjørkeved, "firma" gir bare hovedmenyen."""
     canonical = f"{URL}{path}"
     robots = '<meta name="robots" content="noindex">' if noindex else ""
+    # Delingsbildene er JPEG 1200×630 (WebP vises ikke overalt i Facebook, WhatsApp og LinkedIn).
+    og_image = og_image or ("/img/og-bjorkeved-follo.jpg" if section == "ved" else "/img/firma/og-ansatte.jpg")
     if section == "ved" and not preload and path == VED:
         preload = '<link rel="preload" as="image" href="/img/bjorkeved-levering-follo-768.webp" imagesrcset="/img/bjorkeved-levering-follo-768.webp 768w, /img/bjorkeved-levering-follo-1536.webp 1536w" imagesizes="(min-width: 900px) 50vw, 100vw">'
     verify = (f'<meta name="google-site-verification" content="{C.GOOGLE_SITE_VERIFICATION}">'
@@ -234,6 +236,8 @@ def head(title, desc, path, ld="", noindex=False, section="ved", og_image="/img/
 <meta property="og:description" content="{esc(desc)}">
 <meta property="og:url" content="{canonical}">
 <meta property="og:image" content="{URL}{og_image}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="geo.region" content="NO-32">
 <meta name="geo.placename" content="Follo">
@@ -251,7 +255,7 @@ def head(title, desc, path, ld="", noindex=False, section="ved", og_image="/img/
 <a class="skip" href="#innhold">Hopp til innhold</a>
 <div class="topstrip">
   <div class="wrap topstrip-in">
-    <p>Vaktmester- og vedlikeholdstjenester i Follo · Smebølveien 3, 1433 Ås</p>
+    <p>Vaktmester- og vedlikeholdstjenester i Follo · {esc(CO['street'])}, {CO['postal_code']} {esc(CO['city'])}</p>
     <p><a href="{tel_href()}" data-track="tel">☎ {CO['phone_display']}</a> &nbsp;·&nbsp; <a href="mailto:{CO['email']}">{CO['email']}</a></p>
   </div>
 </div>
@@ -260,6 +264,7 @@ def head(title, desc, path, ld="", noindex=False, section="ved", og_image="/img/
     <a class="logo" href="/" aria-label="{esc(CO['legal_name'])} – forsiden">
       <img src="/img/firma/logo-hvit.png" width="640" height="123" alt="{esc(CO['legal_name'])}">
     </a>
+    <a class="top-tel" href="{tel_href()}" data-track="tel" aria-label="Ring {CO['phone_display']}"><span>{CO['phone_display']}</span></a>
     <button class="menu-btn" type="button" aria-expanded="false" aria-controls="hovedmeny"><span aria-hidden="true"></span>Meny</button>
     {mainnav(path)}
   </div>
@@ -271,7 +276,8 @@ def head(title, desc, path, ld="", noindex=False, section="ved", og_image="/img/
 
 def footer(section="ved"):
     areas = "".join(f'<li><a href="/{a["slug"]}/">Ved i {esc(a["name"])}</a></li>' for a in C.AREAS)
-    services = "".join(f'<li><a href="/{slug}/">{esc(name)}</a></li>' for slug, name in nav_services())
+    # Bjørkeved har egen kolonne i bunnen.
+    services = "".join(f'<li><a href="/{slug}/">{esc(name)}</a></li>' for slug, name in nav_services() if slug != "salg-av-bjorkeved")
     # Knappen vises bare på sider med skjema (app.js), og peker da til skjemaet på samme side.
     sticky = (f'<a class="sticky-cta btn" href="{VED}#bestill">Bestill ved – {P["price"]} kr/sekk</a>' if section == "ved"
               else '<a class="sticky-cta btn" href="/kontakt-oss/#kontakt">Få et uforpliktende tilbud</a>')
@@ -602,7 +608,7 @@ def page_index():
     title = f"Bjørkeved i Follo – levert på døra, {P['price']} kr/sekk | {C.BRAND}"
     desc = (f"Kjøp tørr bjørkeved med levering i Ås, Ski, Kolbotn, Vestby, Drøbak, Nesodden og Enebakk. "
             f"{P['price']} kr per 40 L sekk. Vi bærer veden inn. Bestill på nett.")
-    ld = ld_tags(business_ld(), product_ld(), faq_ld(items))
+    ld = ld_tags(business_ld(), product_ld(), faq_ld(items), breadcrumb_ld("Bjørkeved", VED, parents=()))
     body = (hero("Tørr bjørkeved levert på døra i Follo",
                  f"Vi kjører tørr og god bjørkeved hjem til deg i hele Follo. Du kan få den satt i garasjen, i kjelleren eller båret opp trappa. "
                  f"Én sekk koster {P['price']} kr.")
@@ -881,7 +887,7 @@ def page_personvern():
     body = f"""
 <section class="section">
   <div class="wrap narrow prose">
-    <nav class="crumbs" aria-label="Brødsmuler"><a href="/">Forsiden</a> › Personvern</nav>
+    <nav class="crumbs" aria-label="Brødsmuler"><a href="/">Forsiden</a> › Personvernerklæring</nav>
     <h1>Personvernerklæring</h1>
     <p>{esc(CO['legal_name'])} (org.nr. {CO['org_nr']}), {esc(CO['street'])}, {CO['postal_code']} {esc(CO['city'])}, er ansvarlig for personopplysningene som samles inn på denne nettsiden.</p>
     <h2>Hva vi samler inn</h2>
@@ -898,8 +904,8 @@ def page_personvern():
     <p>Du kan be om å få se, rette eller slette opplysningene vi har om deg, og be om at behandlingen begrenses. Send en e-post til <a href="mailto:{CO['email']}">{CO['email']}</a>. Mener du at vi ikke følger reglene, kan du klage til <a href="https://www.datatilsynet.no/" rel="noopener">Datatilsynet</a>.</p>
   </div>
 </section>"""
-    ld = ld_tags(breadcrumb_ld("Personvern", path, parents=()))
-    return head(f"Personvern | {CO['legal_name']}", "Slik behandler Follo Eiendomsservice AS personopplysninger fra kontaktskjema og vedbestillinger.",
+    ld = ld_tags(breadcrumb_ld("Personvernerklæring", path, parents=()))
+    return head(f"Personvernerklæring | {CO['legal_name']}", "Slik behandler Follo Eiendomsservice AS personopplysninger fra kontaktskjema og vedbestillinger.",
                 path, ld, section="firma") + body + footer("firma")
 
 
@@ -978,7 +984,7 @@ def page_article(a):
     path = f"/artikler/{a['slug']}/"
     blocks = {"bestill": cta_block(), "kalkulator": calculator_block()}
     body_html = AB.markdown(a["body"], blocks)
-    lds = [article_ld(a), business_ld(), breadcrumb_ld(a["title"], path)]
+    lds = [article_ld(a), business_ld(), breadcrumb_ld(a["title"], path, parents=(("Bjørkeved", VED), ("Råd om ved", "/artikler/")))]
     if a["faq"]:
         lds.append(faq_ld(a["faq"]))
     kort = f'<aside class="callout kort"><p class="cta-title">Kort svar</p><p>{esc(a["kort"])}</p></aside>' if a.get("kort") else ""

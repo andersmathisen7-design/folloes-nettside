@@ -522,3 +522,17 @@ textarea.embed { width: 100%; font-family: ui-monospace, Menlo, Consolas, monosp
 .mainnav .nav-tel .btn:hover { background: #74d816; color: var(--accent-ink); }
 .eyebrow { font-family: var(--font-h); text-transform: uppercase; letter-spacing: .08em; font-size: .85rem; font-weight: 500; color: var(--green-2); margin-bottom: .8em; }
 .eyebrow::before { content: ""; display: inline-block; width: 28px; height: 3px; background: var(--lime); vertical-align: middle; margin-right: 10px; border-radius: 2px; }
+.top-tel { display: none; margin-left: auto; color: #fff; font-family: var(--font-h); font-weight: 500; letter-spacing: .04em; text-decoration: none; padding: 8px 10px; }
+.top-tel::before { content: "☎ "; color: var(--lime); }
+@media (max-width: 1020px) { .top-tel { display: inline-block; } }
+@media (max-width: 360px) { .top-tel { font-size: .85rem; padding: 8px 4px; } }
+.top-tel, .menu-btn { white-space: nowrap; }
+.menu-btn { flex: none; }
+@media (max-width: 520px) { .top-tel span { display: none; } .top-tel::after { content: "Ring"; } .logo img { height: 34px; } }
+@media (max-width: 420px) {
+  .topbar-in { gap: 6px; }
+  .logo img { height: 28px; }
+  .menu-btn { padding: 7px 9px; font-size: .82rem; }
+  .menu-btn span { margin-right: 6px; }
+  .top-tel { padding: 8px 6px; }
+}

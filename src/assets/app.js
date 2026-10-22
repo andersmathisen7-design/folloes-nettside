@@ -36,7 +36,7 @@
     var heroVisible = true, orderVisible = false;
     var upd = function () { cta.classList.toggle("show", !heroVisible && !orderVisible); };
     new IntersectionObserver(function (e) { orderVisible = e[0].isIntersecting; upd(); }).observe(orderSec);
-    var hero = document.querySelector(".hero");
+    var hero = document.querySelector(".hero, .phero");
     if (hero) new IntersectionObserver(function (e) { heroVisible = e[0].isIntersecting; upd(); }).observe(hero);
   }
 
@@ -453,7 +453,9 @@
       document.body.classList.toggle("menu-open", open);
     };
     btn.addEventListener("click", function () { setOpen(!nav.classList.contains("open")); });
-    document.addEventListener("keydown", function (e) { if (e.key === "Escape") setOpen(false); });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && nav.classList.contains("open")) { setOpen(false); btn.focus(); }
+    });
     nav.querySelectorAll("a").forEach(function (a) { a.addEventListener("click", function () { setOpen(false); }); });
   }
 
@@ -466,7 +468,7 @@
     e.preventDefault();
     if (form._honey && form._honey.value) return;
     var tel = form.telefon, mail = form.epost;
-    [form.navn, tel, mail, form.melding].forEach(function (el) { el.classList.remove("invalid"); });
+    [form.navn, tel, mail, form.melding].forEach(function (el) { el.classList.remove("invalid"); el.removeAttribute("aria-invalid"); });
     var bad = [];
     if (!form.navn.value.trim()) bad.push(form.navn);
     // Telefon eller e-post holder, så vi kan svare.
@@ -474,7 +476,7 @@
     if (mail.value.trim() && !/^\S+@\S+\.\S+$/.test(mail.value.trim())) bad.push(mail);
     if (!form.melding.value.trim()) bad.push(form.melding);
     if (bad.length) {
-      bad.forEach(function (el) { el.classList.add("invalid"); });
+      bad.forEach(function (el) { el.classList.add("invalid"); el.setAttribute("aria-invalid", "true"); el.setAttribute("aria-describedby", "k-msg"); });
       bad[0].focus();
       msg.className = "form-msg err";
       msg.textContent = bad[0] === tel ? "Skriv telefonnummer eller e-post, så vi kan svare deg." : "Fyll ut feltene som er merket.";

@@ -52,3 +52,6 @@ BILDER = {
     "vindusvask": {800: (800, 451), 1600: (1600, 901)},
     "vinter-traktor": {800: (800, 1067), 1600: (1600, 2133)},
 }
+
+# Delingsbilder (og:image) i JPEG 1200×630: src/img/firma/og-<nøkkel>.jpg
+OG = {"ansatte", "brannslukker", "broyting", "feiemaskin-2", "feiemaskin-4", "feiemaskin-5", "hekkeklipping", "kontor", "renhold-trapp", "trefelling-1"}

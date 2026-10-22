@@ -39,6 +39,9 @@ cd public && python3 -m http.server 8000   # se siden på http://localhost:8000
 2. **Publisering:** Det er ikke satt opp noen workflow ennå. Oppsettet fra follobjorkeved (GitHub Pages, `.github/workflows/pages.yml` i det repoet) kan kopieres med `SITE_URL=https://folloes.no` og `cname: folloes.no`.
 3. **Statistikk:** `GOATCOUNTER` i `config.py` er tom. Lag en ny kode for folloes.no.
 4. **Kontaktskjemaet** bruker samme FormSubmit-adresse som vedbestillingene (`ORDER_EMAIL`, kopi til `ORDER_CC`).
+5. **Search Console:** `GOOGLE_SITE_VERIFICATION` er tom. Koden for follobjorkeved.no gjelder ikke folloes.no.
+6. **Sjekk teksten:** «Gratis befaring» står øverst på forsiden og i kontaktblokken. På folloes.no står det bare på siden for vintertjenester. Stemmer det for alle tjenestene?
+7. **Kjent svakhet i kalenderen (arvet fra follobjorkeved):** `app.js` sender selv `minutes` og `capacity` når en leveringsdag reserveres, og `kalender/kalender.gs` stoler på tallene. Noen som vil, kan fylle opp eller overbooke en dag. Bør regnes ut i `kalender.gs`.
 
 ## Endre priser eller tekst
 

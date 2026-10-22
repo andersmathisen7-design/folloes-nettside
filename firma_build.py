@@ -5,7 +5,7 @@ Teksten ligger i firma_innhold.py. Toppen, bunnen og stilen er de samme som på 
 build.py kaller write_all(build) og får tilbake adressene som skal i sitemap.xml.
 """
 import firma_innhold as F
-from firma_bilder import BILDER
+from firma_bilder import BILDER, OG
 
 B = None  # build-modulen, settes av write_all()
 
@@ -48,6 +48,11 @@ def paras(texts):
     if items:
         out.append(f'<ul class="checks dark">{"".join(items)}</ul>')
     return "".join(out)
+
+
+def og(key):
+    """Delingsbilde i JPEG 1200×630 hvis det finnes for bildet, ellers firmabildet."""
+    return f"/img/firma/og-{key}.jpg" if key in OG else ""
 
 
 def svc_url(s):
@@ -132,7 +137,7 @@ def contact_form(selected=""):
     opts.append('<option>Annet</option>')
     return f"""<form id="kontaktskjema" class="form card contact-form" novalidate>
       <p class="contact-form-h">Send oss en melding</p>
-      <p class="muted small">Vi svarer som regel innen én arbeidsdag. Befaring og tilbud er gratis og uforpliktende.</p>
+      <p class="muted small">Vi tar kontakt så snart vi kan.</p>
       <label for="k-navn">Navn</label>
       <input id="k-navn" name="navn" autocomplete="name" required>
       <div class="row2">
@@ -146,7 +151,7 @@ def contact_form(selected=""):
       <textarea id="k-melding" name="melding" rows="4" required placeholder="Fortell kort hva du trenger hjelp med, og hvor eiendommen ligger."></textarea>
       <input class="hp" name="_honey" tabindex="-1" autocomplete="off" aria-hidden="true">
       <button class="btn btn-block btn-lg" type="submit">Send melding</button>
-      <p class="form-msg" role="status" aria-live="polite"></p>
+      <p class="form-msg" id="k-msg" role="status" aria-live="polite"></p>
       <p class="muted small">Vi bruker opplysningene bare til å svare deg. Les <a href="/personvernerklaering/">personvernerklæringen</a>.</p>
     </form>"""
 
@@ -293,7 +298,7 @@ def page_forside():
     ld = B.ld_tags(B.business_ld(), {
         "@context": "https://schema.org", "@type": "WebSite", "name": CO["legal_name"], "url": f"{B.URL}/"})
     return (B.head(f"Vaktmester og vedlikehold i Follo | {CO['legal_name']}", desc, "/", ld,
-                   section="firma", og_image="/img/firma/ansatte-1600.webp", preload=preload("ansatte"))
+                   section="firma", preload=preload("ansatte"))
             + body + B.footer("firma"))
 
 
@@ -346,7 +351,7 @@ def page_service(s):
     ld = B.ld_tags(service_ld(s), B.breadcrumb_ld(s["name"], path, parents=(("Tjenester", "/tjenester/"),)))
     key = s.get("hero_img") or s.get("card_img")
     return (B.head(title(s["title"]), s["desc"], path, ld, section="firma",
-                   og_image=f"/img/firma/{key}-800.webp", preload=preload(key)) + body + B.footer("firma"))
+                   og_image=og(key), preload=preload(key)) + body + B.footer("firma"))
 
 
 def page_om_oss():
@@ -387,13 +392,13 @@ def page_referanser():
 def page_kontakt():
     path = "/kontakt-oss/"
     CO = B.CO
-    maps = "https://www.google.com/maps/search/?api=1&query=" + f"{CO['street']}, {CO['postal_code']} {CO['city']}".replace(" ", "+")
+    maps = esc("https://www.google.com/maps/search/?api=1&query=" + f"{CO['street']}, {CO['postal_code']} {CO['city']}".replace(" ", "+"))
     body = f"""
 <section class="section">
   <div class="wrap">
     {crumbs(("Kontakt oss", ""))}
     <h1>Kontakt oss</h1>
-    <p class="lead">Ring, send e-post eller fyll ut skjemaet. Befaring og tilbud er gratis og uforpliktende.</p>
+    <p class="lead">Ring, send e-post eller fyll ut skjemaet, så tar vi kontakt.</p>
     <div class="contact-page">
       <ul class="info-cards">
         <li><a href="{B.tel_href()}" data-track="tel">{icon("tel")}<span><strong>Ring oss</strong>{CO['phone_display']}</span></a></li>
@@ -416,7 +421,7 @@ def page_takk():
 <section class="section">
   <div class="wrap narrow center">
     <h1>Takk for henvendelsen!</h1>
-    <p class="lead">Vi har fått meldingen din og tar kontakt så snart vi kan, som regel innen én arbeidsdag.</p>
+    <p class="lead">Vi har fått meldingen din og tar kontakt så snart vi kan.</p>
     <p>Haster det? Ring <a href="{B.tel_href()}">{B.CO['phone_display']}</a>.</p>
     <p><a class="btn" href="/">Til forsiden</a> <a class="btn btn-ghost" href="/tjenester/">Se tjenestene</a></p>
   </div>
