@@ -947,6 +947,7 @@ def page_404():
 # ---------------------------------------------------------------- artikler
 
 ARTICLES = AB.load()
+RAD = AB.load(AB.ROOT / "rad")  # hjelpeartikler for firmatjenestene, bygges i firma_build.py
 
 
 def cta_block():
@@ -1562,6 +1563,7 @@ def llms_txt():
            f"- [Åpne data]({URL}/data/): vedfyring per kommune i Follo som CSV (CC BY 4.0)",
            f"- [Presse]({URL}/presse/): tall, bilder med fri bruk og kontakt"])
     services = "\n".join(f"- [{x['name']}]({URL}/{x['slug']}/): {x['card']}" for x in F.SERVICES + [F.GARASJEVASK_SIDE])
+    rad = "\n".join(f"- [{a['title']}]({URL}/rad/{a['slug']}/): {a.get('kort') or a['description']}" for a in RAD)
     return f"""# {CO['legal_name']}
 
 > {CO['legal_name']} (tidligere Min Eiendomsservice AS) leverer vaktmester- og vedlikeholdstjenester til privatpersoner, borettslag og bedrifter i Follo, og selger bjørkeved under navnet {C.BRAND}. Kontakt: {CO['phone']}, {CO['email']}, [kontaktskjema]({URL}/kontakt-oss/).
@@ -1598,6 +1600,9 @@ def llms_txt():
 
 ## Verktøy og data
 {tools}
+
+## Råd om eiendom, vinterdrift og trær ({CO['legal_name']})
+{rad}
 """
 
 

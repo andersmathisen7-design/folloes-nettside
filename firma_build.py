@@ -244,8 +244,26 @@ def service_ld(s):
         "serviceType": s["name"],
         "url": f"{B.URL}{svc_url(s)}",
         "provider": {"@id": f"{B.URL}/#business"},
-        "areaServed": {"@type": "AdministrativeArea", "name": "Follo"},
+        "areaServed": [{"@type": "AdministrativeArea", "name": k} for k in KOMMUNER],
     }
+
+
+KOMMUNER = ["Ås", "Nordre Follo", "Nesodden", "Vestby", "Frogn", "Enebakk"]
+
+
+def faq_html(items):
+    return '<h2 id="sporsmal">Spørsmål og svar</h2>' + "".join(
+        f"<details><summary>{esc(q)}</summary><p>{esc(a)}</p></details>" for q, a in items)
+
+
+def rad_for(slug):
+    """Hjelpeartiklene i rad/ som hører til tjenesten."""
+    return [a for a in B.RAD if a.get("tjeneste") == slug]
+
+
+def rad_list(arts):
+    return "".join(f'<li><a href="/rad/{a["slug"]}/"><strong>{esc(a["title"])}</strong><span>{esc(a["description"][:90])}…</span></a></li>'
+                   for a in arts)
 
 
 def title(t):
@@ -323,7 +341,7 @@ def page_forside():
             "For private, borettslag og bedrifter.")
     ld = B.ld_tags(B.business_ld(), {
         "@context": "https://schema.org", "@type": "WebSite", "name": CO["legal_name"], "url": f"{B.URL}/"})
-    return (B.head(f"Vaktmester og vedlikehold i Follo | {CO['legal_name']}", desc, "/", ld,
+    return (B.head(f"Vaktmester og brøyting i Ås og Follo | {CO['legal_name']}", desc, "/", ld,
                    section="firma", preload=preload("ansatte"))
             + body + B.footer("firma"))
 
@@ -334,7 +352,14 @@ def page_tjenester():
                      "feiemaskin-2", crumb=crumbs(("Tjenester", ""))) + f"""
 <section class="section alt">
   <div class="wrap">{service_cards(services(), h="h2")}</div>
-</section>""" + contact_section()
+</section>""" + (f"""
+<section class="section">
+  <div class="wrap">
+    <h2>Råd for huseiere og borettslag</h2>
+    <ul class="areas">{rad_list(B.RAD)}</ul>
+    <p><a href="/rad/">Se alle rådene →</a></p>
+  </div>
+</section>""" if B.RAD else "") + contact_section()
     ld = B.ld_tags(B.breadcrumb_ld("Tjenester", path, parents=()))
     return (B.head(title("Tjenester"), "Alle tjenestene til Follo Eiendomsservice AS: vaktmester, vintertjenester, feiing og spyling, garasjevask, gartner, renhold, HMS, matteutleie, trefelling og bjørkeved.",
                    path, ld, section="firma", preload=preload("feiemaskin-2")) + body + B.footer("firma"))
@@ -366,6 +391,21 @@ def page_service(s, extra="", parents=(("Tjenester", "/tjenester/"),), section="
     <ul class="task-grid">{items}</ul>
   </div>
 </section>"""
+    faq = ""
+    if s.get("faq"):
+        faq = f"""
+<section class="section">
+  <div class="wrap narrow prose">{faq_html(s["faq"])}</div>
+</section>"""
+    rad = ""
+    if rad_for(s["slug"]):
+        rad = f"""
+<section class="section alt">
+  <div class="wrap">
+    <h2>Råd og svar om {esc(s["name"].lower())}</h2>
+    <ul class="areas">{rad_list(rad_for(s["slug"]))}</ul>
+  </div>
+</section>"""
     others = [x for x in services() if x["slug"] != s["slug"]]
     links = "".join(f'<li><a href="{svc_url(x)}">{esc(x["name"])}</a></li>' for x in others)
     more = f"""
@@ -376,8 +416,9 @@ def page_service(s, extra="", parents=(("Tjenester", "/tjenester/"),), section="
   </div>
 </section>"""
     body = (hero + f'\n<section class="section"><div class="wrap splits">{"".join(blocks)}</div></section>'
-            + extra + tasks + contact_section(selected=s["name"]) + more)
-    ld = B.ld_tags(service_ld(s), B.breadcrumb_ld(s["name"], path, parents=parents))
+            + extra + tasks + faq + rad + contact_section(selected=s["name"]) + more)
+    ld = B.ld_tags(service_ld(s), B.breadcrumb_ld(s["name"], path, parents=parents),
+                   *([B.faq_ld(s["faq"])] if s.get("faq") else []))
     key = s.get("hero_img") or s.get("card_img")
     return (B.head(title(s["title"]), s["desc"], path, ld, section=section,
                    og_image=og(key), preload=preload(key)) + body + B.footer("firma"))
@@ -532,6 +573,73 @@ def page_takk():
                   noindex=True, section="firma") + body + B.footer("firma")
 
 
+# ---------------------------------------------------------------- råd (hjelpeartikler i rad/)
+
+def rad_service(a):
+    return next((x for x in services() if x["slug"] == a.get("tjeneste")), None)
+
+
+def kontakt_box(a):
+    sv = rad_service(a)
+    more = f' Les mer om <a href="{svc_url(sv)}">{esc(sv["name"].lower())}</a>.' if sv else ""
+    return f"""<aside class="cta-box">
+  <p class="cta-title">Trenger du hjelp?</p>
+  <p>{esc(B.CO['legal_name'])} hjelper privatpersoner, borettslag og bedrifter i hele Follo.{more}</p>
+  <a class="btn" href="#kontakt" data-track="article_cta">Be om et uforpliktende tilbud</a>
+</aside>"""
+
+
+def page_rad(a):
+    path = f"/rad/{a['slug']}/"
+    sv = rad_service(a)
+    body_html = B.AB.markdown(a["body"], {"kontakt": kontakt_box(a)})
+    lds = [dict(B.article_ld(a), mainEntityOfPage=f"{B.URL}{path}", image=f"{B.URL}/img/firma/og-ansatte.jpg"),
+           B.breadcrumb_ld(a["title"], path, parents=(("Råd", "/rad/"),))]
+    if a["faq"]:
+        lds.append(B.faq_ld(a["faq"]))
+    kort = f'<aside class="callout kort"><p class="cta-title">Kort svar</p><p>{esc(a["kort"])}</p></aside>' if a.get("kort") else ""
+    others = [x for x in B.RAD if x["slug"] != a["slug"]]
+    others.sort(key=lambda x: x.get("tjeneste") != a.get("tjeneste"))  # samme tjeneste først
+    body = f"""
+<article class="section">
+  <div class="wrap narrow prose">
+    {crumbs(("Råd", "/rad/"), (a["title"], ""))}
+    <h1>{esc(a['title'])}</h1>
+    <p class="meta muted small">Av {esc(B.CO['legal_name'])} · Oppdatert {B.nb_date(a['updated'])}</p>
+    {kort}
+    {body_html}
+    {faq_html(a["faq"]) if a["faq"] else ""}
+    {"" if "[[kontakt]]" in a["body"] else kontakt_box(a)}
+  </div>
+</article>""" + (f"""
+<section class="section alt">
+  <div class="wrap">
+    <h2>Flere råd</h2>
+    <ul class="areas">{rad_list(others[:4])}</ul>
+  </div>
+</section>""" if others else "") + contact_section(selected=sv["name"] if sv else "")
+    return (B.head(title(a["title"]), a["description"], path, B.ld_tags(*lds), section="firma")
+            + body + B.footer("firma"))
+
+
+def page_rad_index():
+    path = "/rad/"
+    body = f"""
+<section class="section">
+  <div class="wrap">
+    {crumbs(("Råd", ""))}
+    <h1>Råd for huseiere, borettslag og bedrifter</h1>
+    <p class="lead">Svar på det vi oftest får spørsmål om: snømåking og ansvar, snø på taket, trær mot naboen, lekeplasser og brannsikkerhet. Med kilder, så du kan sjekke selv.</p>
+    <ul class="areas articles">{rad_list(B.RAD)}</ul>
+  </div>
+</section>""" + contact_section()
+    ld = {"@context": "https://schema.org", "@type": "CollectionPage", "name": "Råd for huseiere, borettslag og bedrifter",
+          "hasPart": [{"@type": "Article", "headline": a["title"], "url": f"{B.URL}/rad/{a['slug']}/"} for a in B.RAD]}
+    return (B.head(title("Råd om snømåking, trær, lekeplass og brannsikkerhet"),
+                   "Råd for huseiere og borettslag i Follo: ansvar for snømåking og strøing, snø på taket, trær mot naboen, lekeplasskontroll og brannsikkerhet.",
+                   path, B.ld_tags(ld, B.breadcrumb_ld("Råd", path, parents=())), section="firma") + body + B.footer("firma"))
+
+
 def write_all(build):
     global B
     B = build
@@ -544,5 +652,11 @@ def write_all(build):
     B.write("referanser/index.html", page_referanser())
     B.write("kontakt-oss/index.html", page_kontakt())
     B.write("takk-for-din-henvendelse/index.html", page_takk())
+    rad = []
+    if B.RAD:
+        B.write("rad/index.html", page_rad_index())
+        for a in B.RAD:
+            B.write(f"rad/{a['slug']}/index.html", page_rad(a))
+        rad = ["/rad/"] + [f"/rad/{a['slug']}/" for a in B.RAD]
     return (["/", "/tjenester/"] + [svc_url(s) for s in real_services()]
-            + [GV, "/om-oss/", "/referanser/", "/kontakt-oss/"])
+            + [GV, "/om-oss/", "/referanser/", "/kontakt-oss/"] + rad)
