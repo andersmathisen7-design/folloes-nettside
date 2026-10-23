@@ -537,3 +537,14 @@ textarea.embed { width: 100%; font-family: ui-monospace, Menlo, Consolas, monosp
   .top-tel { padding: 8px 6px; }
 }
 .test-banner { background: #ffd400; color: #111; text-align: center; font-weight: 700; font-size: .9rem; padding: 6px 16px; }
+
+.price-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin: 0 0 24px; }
+.price-card { padding: 22px; }
+.price-card h3, .price-card .h3 { margin-top: 0; }
+.price-card table { width: 100%; border-collapse: collapse; }
+.price-card th, .price-card td { text-align: left; padding: 8px 6px; border-bottom: 1px solid rgba(0,0,0,.1); }
+.check-list { list-style: none; padding: 0; margin: 0 0 12px; }
+.check-list li { position: relative; padding: 6px 0 6px 28px; }
+.check-list li::before { content: "✓"; position: absolute; left: 0; color: var(--green-2); font-weight: 700; }
+.gv-calc { max-width: 640px; margin: 0 auto; padding: 24px; }
+.gv-result { margin: 18px 0; padding: 16px; border-radius: 10px; background: rgba(99,195,2,.12); font-size: 1.1rem; }

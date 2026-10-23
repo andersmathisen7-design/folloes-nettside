@@ -314,6 +314,72 @@ def page_tjenester():
                    path, ld, section="firma", preload=preload("feiemaskin-2")) + body + B.footer("firma"))
 
 
+def garasjevask_ekstra(s):
+    P = s["pris"]
+    inngar = "".join(f"<li>{esc(t)}</li>" for t in P["inngar"])
+    tabs = "".join(
+        f"""<div class="card price-card"><h3>{esc(t['navn'])}</h3>
+      <div class="table-wrap"><table><thead><tr><th>Antall plasser</th><th>Pris per plass</th></tr></thead><tbody>{"".join(f"<tr><td>{esc(a)}</td><td>{esc(b)}</td></tr>" for a, b in t['rader'])}</tbody></table></div>
+      <p class="muted small">{esc(t['min'])}</p></div>""" for t in P["tabeller"])
+    rab = "".join(f"<li><strong>{esc(a)}</strong> {esc(b)} rabatt</li>" for a, b in P["rabatter"])
+    risiko = "".join(f"<li>{esc(t)}</li>" for t in s["risiko"])
+    forb = "".join(f"<li>{esc(t)}</li>" for t in s["forberedelser"])
+    return f"""
+<section class="section alt" id="priser">
+  <div class="wrap">
+    <div class="section-head center"><p class="kicker">Priser</p><h2>Forutsigbar pris, enkelt forklart</h2><p class="muted">{esc(P['intro'])}</p></div>
+    <div class="price-grid">{tabs}</div>
+    <div class="price-grid">
+      <div class="card price-card"><h3>Hva inngår i en standard garasjevask</h3><ul class="check-list">{inngar}</ul></div>
+      <div class="card price-card"><h3>Rabatt ved binding</h3><ul class="check-list">{rab}</ul><p class="muted small">{esc(P['kjoring'])}</p></div>
+    </div>
+  </div>
+</section>
+<section class="section" id="priskalkulator">
+  <div class="wrap">
+    <div class="section-head center"><p class="kicker">Priskalkulator</p><h2>Få en veiledende pris</h2><p class="muted">Én parkeringsplass tilsvarer ca. 25 m². Prisen er veiledende. Endelig avtale bekreftes etter befaring.</p></div>
+    <form class="card form gv-calc" id="gv-calc" novalidate>
+      <label for="gv-underlag">Underlag</label>
+      <select id="gv-underlag"><option value="betong">Betongunderlag (én operatør)</option><option value="asfalt">Asfaltunderlag (to personer)</option></select>
+      <div class="row2">
+        <div><label for="gv-plasser">Antall parkeringsplasser</label><input id="gv-plasser" type="number" min="1" inputmode="numeric" value="50"></div>
+        <div><label for="gv-km">Kjørelengde én vei fra Ås (km)</label><input id="gv-km" type="number" min="0" inputmode="numeric" value="20"></div>
+      </div>
+      <label for="gv-binding">Binding (rabatt på veiledende total)</label>
+      <select id="gv-binding"><option value="0">Ingen binding</option><option value="0.10">2 år (10 %)</option><option value="0.15">3 år (15 %)</option><option value="0.20">5 år (20 %)</option></select>
+      <div class="gv-result" id="gv-result" role="status" aria-live="polite"></div>
+      <a class="btn btn-block" href="#kontakt" id="gv-send">Be om tilbud</a>
+    </form>
+  </div>
+</section>
+<section class="section alt">
+  <div class="wrap price-grid">
+    <div class="card price-card"><h2 class="h3">Risiko og hensyn</h2><ul class="check-list">{risiko}</ul></div>
+    <div class="card price-card"><h2 class="h3">Forberedelser for kunde</h2><ul class="check-list">{forb}</ul></div>
+  </div>
+</section>
+<script>
+(function(){{
+var T={{betong:[[50,230],[150,220],[400,205]],asfalt:[[50,270],[100,255],[200,235]]}},MIN=8500,KM=13;
+var f=document.getElementById("gv-calc"),r=document.getElementById("gv-result"),last="";
+function fmt(n){{return Math.round(n).toLocaleString("nb-NO")+" kr";}}
+function calc(){{
+ var u=document.getElementById("gv-underlag").value,n=Math.max(0,Math.floor(+document.getElementById("gv-plasser").value||0)),
+ km=Math.max(0,+document.getElementById("gv-km").value||0),d=+document.getElementById("gv-binding").value,t=T[u],p=null;
+ for(var i=0;i<t.length;i++){{if(n<=t[i][0]){{p=t[i][1];break;}}}}
+ if(!n){{r.textContent="Fyll inn antall parkeringsplasser.";last="";return;}}
+ if(p===null){{r.textContent="Over "+t[t.length-1][0]+" plasser: pris på forespørsel.";last="Garasjevask, "+n+" plasser ("+u+"). Ønsker pris.";return;}}
+ var vask=Math.max(MIN,n*p),kjor=km*KM,sum=(vask+kjor)*(1-d);
+ r.innerHTML="<strong>Veiledende pris: "+fmt(sum)+"</strong><br><span class='muted small'>Vask "+fmt(vask)+(vask===MIN&&n*p<MIN?" (minstepris)":"")+" + kjøring "+fmt(kjor)+(d?", rabatt "+Math.round(d*100)+" %":"")+".</span>";
+ last="Garasjevask, "+n+" plasser ("+u+"), "+km+" km fra Ås, veiledende pris "+fmt(sum)+". Ønsker tilbud.";
+}}
+f.addEventListener("input",calc);f.addEventListener("submit",function(e){{e.preventDefault();}});
+document.getElementById("gv-send").addEventListener("click",function(){{var m=document.getElementById("k-melding");if(m&&last&&!m.value)m.value=last;}});
+calc();
+}})();
+</script>"""
+
+
 def page_service(s):
     path = svc_url(s)
     hero = page_hero(s["h1"], s.get("lead", ""), s.get("hero_img") or s.get("card_img"),
@@ -347,7 +413,7 @@ def page_service(s):
   </div>
 </section>"""
     body = (hero + f'\n<section class="section"><div class="wrap splits">{"".join(blocks)}</div></section>'
-            + tasks + contact_section(selected=s["name"]) + more)
+            + (garasjevask_ekstra(s) if s.get("pris") else "") + tasks + contact_section(selected=s["name"]) + more)
     ld = B.ld_tags(service_ld(s), B.breadcrumb_ld(s["name"], path, parents=(("Tjenester", "/tjenester/"),)))
     key = s.get("hero_img") or s.get("card_img")
     return (B.head(title(s["title"]), s["desc"], path, ld, section="firma",

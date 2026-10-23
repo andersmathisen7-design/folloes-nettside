@@ -40,13 +40,14 @@ Testversjonen har en gul stripe øverst og blir ikke indeksert av Google. Den br
 
 ## Før lansering
 
-1. **Domenet (bestemt 22. okt. 2026):** follobjorkeved.no skal sende videre (301) til folloes.no: forsiden til /salg-av-bjorkeved/ og undersidene til samme adresse på folloes.no. Gjøres samme dag som den nye siden går live på folloes.no, ikke før, ellers forsvinner vedsiden i mellomtiden.
-2. **Publisering:** Det er ikke satt opp noen workflow ennå. Oppsettet fra follobjorkeved (GitHub Pages, `.github/workflows/pages.yml` i det repoet) kan kopieres med `SITE_URL=https://folloes.no` og `cname: folloes.no`.
-3. **Statistikk:** `GOATCOUNTER` i `config.py` er tom. Lag en ny kode for folloes.no.
-4. **Kontaktskjemaet** bruker samme FormSubmit-adresse som vedbestillingene (`ORDER_EMAIL`, kopi til `ORDER_CC`).
-5. **Search Console:** `GOOGLE_SITE_VERIFICATION` er tom. Koden for follobjorkeved.no gjelder ikke folloes.no.
-6. **Sjekk teksten:** «Gratis befaring» står øverst på forsiden og i kontaktblokken. På folloes.no står det bare på siden for vintertjenester. Stemmer det for alle tjenestene?
-7. **Kjent svakhet i kalenderen (arvet fra follobjorkeved):** `app.js` sender selv `minutes` og `capacity` når en leveringsdag reserveres, og `kalender/kalender.gs` stoler på tallene. Noen som vil, kan fylle opp eller overbooke en dag. Bør regnes ut i `kalender.gs`.
+1. **garasjevasken.no:** innholdet er kopiert inn på `/garasjevask/` (tekst, priser, priskalkulator, risiko og forberedelser). Som follobjorkeved.no skal garasjevasken.no sende videre (301) til folloes.no/garasjevask/ (og undersider til samme adresse), samme dag som folloes.no går live. Kalkulatoren gir en veiledende pris og fyller ut meldingen i kontaktskjemaet. Opplasting av bilder (som på garasjevasken.no) er ikke med; kunden kan sende dem på e-post etter første kontakt.
+2. **Domenet (bestemt 22. okt. 2026):** follobjorkeved.no skal sende videre (301) til folloes.no: forsiden til /salg-av-bjorkeved/ og undersidene til samme adresse på folloes.no. Gjøres samme dag som den nye siden går live på folloes.no, ikke før, ellers forsvinner vedsiden i mellomtiden.
+3. **Publisering:** Det er ikke satt opp noen workflow ennå. Oppsettet fra follobjorkeved (GitHub Pages, `.github/workflows/pages.yml` i det repoet) kan kopieres med `SITE_URL=https://folloes.no` og `cname: folloes.no`.
+4. **Statistikk:** `GOATCOUNTER` i `config.py` er tom. Lag en ny kode for folloes.no.
+5. **Kontaktskjemaet** bruker samme FormSubmit-adresse som vedbestillingene (`ORDER_EMAIL`, kopi til `ORDER_CC`).
+6. **Search Console:** `GOOGLE_SITE_VERIFICATION` er tom. Koden for follobjorkeved.no gjelder ikke folloes.no.
+7. **Sjekk teksten:** «Gratis befaring» står øverst på forsiden og i kontaktblokken. På folloes.no står det bare på siden for vintertjenester. Stemmer det for alle tjenestene?
+8. **Kjent svakhet i kalenderen (arvet fra follobjorkeved):** `app.js` sender selv `minutes` og `capacity` når en leveringsdag reserveres, og `kalender/kalender.gs` stoler på tallene. Noen som vil, kan fylle opp eller overbooke en dag. Bør regnes ut i `kalender.gs`.
 
 ## Endre priser eller tekst
 

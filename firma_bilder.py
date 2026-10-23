@@ -16,6 +16,9 @@ BILDER = {
     "ferdigplen": {800: (800, 451), 1600: (1600, 901)},
     "garasjeanlegg": {800: (800, 451), 1600: (1230, 693)},
     "garasjevask": {800: (800, 533), 1600: (1440, 960)},
+    "gv-hero": {800: (800, 533), 1600: (1600, 1067)},
+    "gv-1": {800: (800, 600), 1600: (1600, 1200)},
+    "gv-2": {800: (800, 533), 1600: (1600, 1067)},
     "handmaking": {800: (800, 533), 1600: (1600, 1067)},
     "hekk": {800: (800, 451), 1600: (1230, 693)},
     "hekkeklipping": {800: (800, 451), 1600: (1230, 693)},
@@ -54,4 +57,4 @@ BILDER = {
 }
 
 # Delingsbilder (og:image) i JPEG 1200×630: src/img/firma/og-<nøkkel>.jpg
-OG = {"ansatte", "brannslukker", "broyting", "feiemaskin-2", "feiemaskin-4", "feiemaskin-5", "hekkeklipping", "kontor", "renhold-trapp", "trefelling-1"}
+OG = {"gv-hero", "ansatte", "brannslukker", "broyting", "feiemaskin-2", "feiemaskin-4", "feiemaskin-5", "hekkeklipping", "kontor", "renhold-trapp", "trefelling-1"}

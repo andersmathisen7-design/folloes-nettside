@@ -168,25 +168,69 @@ SERVICES = [
     {
         "slug": "garasjevask",
         "name": "Garasjevask",
-        "title": "Garasjevask | Follo Eiendomsservice AS",
-        "desc": "Vi feier og spyler garasjeanlegg for borettslag og sameier, slik at garasjen holder seg ren og trygg å ferdes i. Kontakt oss for en avtale.",
-        "h1": "Garasjevask",
-        "lead": "Vi feier og spyler garasjeanlegg for borettslag, sameier og bedrifter. Kontakt oss, så setter vi opp en løsning som passer ditt anlegg.",
-        "card": "Vi feier og spyler garasjeanlegg for borettslag, sameier og bedrifter. Kontakt oss for en avtale.",
-        "card_img": "garasjevask",
-        "hero_img": "garasjevask",
+        "title": "Profesjonell garasjevask for borettslag og næring | Follo Eiendomsservice AS",
+        "desc": "Effektiv og skånsom garasjevask til fast pris per parkeringsplass for borettslag, sameier og næring. Prøv priskalkulatoren og få en veiledende pris.",
+        "h1": "Profesjonell garasjevask for borettslag og næring",
+        "lead": "Vi leverer grundig garasjevask med fast pris per parkeringsplass. Effektiv gjennomføring, skånsom behandling og forutsigbare kostnader.",
+        "card": "Grundig garasjevask med fast pris per parkeringsplass for borettslag, sameier og næring.",
+        "card_img": "gv-1",
+        "hero_img": "gv-hero",
         "sections": [
             {
-                "h2": "Rent og trygt i garasjen",
+                "h2": "Profesjonell og effektiv garasjevask",
                 "text": [
-                    "Støv, salt og smuss samler seg gjennom vinteren og gjør garasjen skitten og glatt. Med feiing og spyling fjerner vi belegget, slik at garasjeanlegget blir ryddig og tryggere å gå og kjøre i.",
+                    "Vi tilbyr profesjonell og effektiv garasjevask for borettslag, sameier, næringsbygg og gårdsanlegg. Over tid samler garasjeanlegg store mengder sand, støv, eksosrester og forurensning som påvirker både bygg, biler og inneklima.",
+                    "Med riktig utstyr og erfaring sørger vi for en grundig rengjøring som gir et synlig og varig resultat, uten unødvendig belastning på betong eller asfalt. Vi jobber strukturert, effektivt og med minst mulig ulempe for brukerne av anlegget.",
+                    "En ren garasje forlenger levetiden på betong og asfalt, reduserer slitasje på biler og dekk, gir et tryggere og mer trivelig miljø og et bedre førsteinntrykk for beboere og besøkende.",
                 ],
-                "img": "garasjeanlegg",
+                "img": "gv-1",
             },
+            {
+                "h2": "Slik utfører vi garasjevask",
+                "text": [
+                    "Arbeidet starter med grundig grovrengjøring og fjerning av løsmasser. Deretter vaskes gulvene med profesjonell garasjevasker hvor skittent vann suges opp igjen. Dette gir et rent resultat uten at skitt og vann blir liggende igjen i anlegget.",
+                    "Metoden er effektiv, skånsom og godt egnet for både betong- og asfaltunderlag. Profesjonell garasjevask gir bedre inneklima og mindre støvspredning, redusert vedlikeholdsbehov, lengre levetid på gulv og overflater og et renere og mer representativt bygg.",
+                ],
+                "img": "gv-2",
+            },
+            {
+                "h2": "Hvorfor velge profesjonell garasjevask?",
+                "text": [
+                    "Garasjeanlegg utsettes daglig for sand, fukt, veisalt og eksos. Uten regelmessig vask bygger dette seg opp og fører til økt slitasje på både gulv, konstruksjon og kjøretøy.",
+                ],
+                "img": None,
+            },
+        ],
+        "pris": {
+            "intro": "Garasjevask prises per parkeringsplass, slik at styret enkelt kan beregne kostnadene på forhånd. Én parkeringsplass tilsvarer ca. 25 m². Større anlegg gir lavere pris per plass, og vi tilbyr gunstige avtaler for regelmessig vask.",
+            "inngar": [
+                "Feiing og grovrengjøring",
+                "Fjerning av støv, sand og grus",
+                "Vasking med vann som suges opp igjen med garasjevasker",
+                "Utstyr og materiell: garasjevasker, kost og feieutstyr, slanger og vanntilkobling",
+            ],
+            "tabeller": [
+                {"navn": "Betongunderlag (1 person)", "rader": [("1–50 plasser", "230 kr"), ("51–150 plasser", "220 kr"), ("151–400 plasser", "205 kr"), ("Over 400 plasser", "Pris på forespørsel")], "min": "Minstepris: 8 500 kr"},
+                {"navn": "Asfaltunderlag (2 personer)", "rader": [("1–50 plasser", "270 kr"), ("51–100 plasser", "255 kr"), ("101–200 plasser", "235 kr"), ("Over 200 plasser", "Pris på forespørsel")], "min": "Minstepris: 8 500 kr"},
+            ],
+            "rabatter": [("2 års binding", "10 %"), ("3 års binding", "15 %"), ("5 års binding", "20 %")],
+            "kjoring": "Oppmøte/kjøring: 13 kr per km fra Ås, beregnet én vei.",
+        },
+        "risiko": [
+            "Glatte gulv under og etter vask",
+            "Elektriske installasjoner",
+            "Eldre betonggulv",
+            "Avrenning av skittent vann",
+        ],
+        "forberedelser": [
+            "Garasjen tømmes for løse gjenstander",
+            "Tilgang til vann og strøm",
+            "Port må kunne stå åpen under vask",
         ],
         "tasks": [
             {"name": "Feiing av garasjeanlegg", "img": "feiemaskin-5"},
-            {"name": "Spyling av garasjegulv", "img": "garasjevask"},
+            {"name": "Garasjevask på betong", "img": "garasjevask"},
+            {"name": "Garasjevask på asfalt", "img": "garasjeanlegg"},
         ],
     },
     {
