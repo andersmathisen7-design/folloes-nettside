@@ -160,10 +160,33 @@ SERVICES = [
         ],
         "tasks": [
             {"name": "Vårfeiing", "img": "feiemaskin-5"},
-            {"name": "Garasjevask", "img": "garasjeanlegg"},
             {"name": "Fasadevask", "img": "fasadevask"},
             {"name": "Spyling av takrenner", "img": "takrennerens"},
             {"name": "Takvask", "img": "lift-tak"},
+        ],
+    },
+    {
+        "slug": "garasjevask",
+        "name": "Garasjevask",
+        "title": "Garasjevask | Follo Eiendomsservice AS",
+        "desc": "Vi feier og spyler garasjeanlegg for borettslag og sameier, slik at garasjen holder seg ren og trygg å ferdes i. Kontakt oss for en avtale.",
+        "h1": "Garasjevask",
+        "lead": "Vi feier og spyler garasjeanlegg for borettslag, sameier og bedrifter. Kontakt oss, så setter vi opp en løsning som passer ditt anlegg.",
+        "card": "Vi feier og spyler garasjeanlegg for borettslag, sameier og bedrifter. Kontakt oss for en avtale.",
+        "card_img": "garasjevask",
+        "hero_img": "garasjevask",
+        "sections": [
+            {
+                "h2": "Rent og trygt i garasjen",
+                "text": [
+                    "Støv, salt og smuss samler seg gjennom vinteren og gjør garasjen skitten og glatt. Med feiing og spyling fjerner vi belegget, slik at garasjeanlegget blir ryddig og tryggere å gå og kjøre i.",
+                ],
+                "img": "garasjeanlegg",
+            },
+        ],
+        "tasks": [
+            {"name": "Feiing av garasjeanlegg", "img": "feiemaskin-5"},
+            {"name": "Spyling av garasjegulv", "img": "garasjevask"},
         ],
     },
     {

@@ -7,7 +7,7 @@ Ny, rask og statisk versjon av **folloes.no** (i dag WordPress med Elementor), m
 | Side | Hva |
 |---|---|
 | `/` | Forsiden for firmaet: tjenester, årstider, referanser, bjørkeved og kontaktskjema |
-| `/tjenester/` og `/vaktmestertjenester/`, `/vintertjenester/`, `/feiing-og-spyling/`, `/gartner-og-grontareal/`, `/renhold/`, `/hms-brannsikring-kontroll-av-lekeplasser/`, `/matteutleie/`, `/trefelling/` | Tjenestesidene, samme adresser som på dagens folloes.no |
+| `/tjenester/` og `/vaktmestertjenester/`, `/vintertjenester/`, `/feiing-og-spyling/`, `/garasjevask/`, `/gartner-og-grontareal/`, `/renhold/`, `/hms-brannsikring-kontroll-av-lekeplasser/`, `/matteutleie/`, `/trefelling/` | Tjenestesidene, samme adresser som på dagens folloes.no |
 | `/om-oss/`, `/referanser/`, `/kontakt-oss/`, `/personvernerklaering/`, `/takk-for-din-henvendelse/` | Som på folloes.no. Personvernerklæringen dekker nå både kontaktskjemaet og vedbestillinger |
 | `/salg-av-bjorkeved/` | Forsiden for bjørkeved (var forsiden på follobjorkeved.no). Erstatter den gamle siden med samme adresse på folloes.no |
 | `/ved-as/` … `/ved-enebakk/`, `/vedabonnement/`, `/artikler/`, `/vedpris/`, `/fyre-i-dag/`, `/verktoy/`, `/data/`, `/presse/`, `/admin/`, `/takk/` | Resten av bjørkeved-sidene, uendret adresse fra follobjorkeved.no |
