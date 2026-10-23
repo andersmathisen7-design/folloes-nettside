@@ -30,12 +30,14 @@
 
   // Mobil: vis "Bestill"-knapp nederst når bestillingsskjemaet ikke er synlig.
   var cta = document.querySelector(".sticky-cta");
-  var orderSec = document.getElementById("bestill") || document.getElementById("kontakt");
+  var orderSec = document.getElementById("bestill") || document.getElementById("priskalkulator") || document.getElementById("kontakt");
   if (cta && orderSec) cta.setAttribute("href", "#" + orderSec.id);
   if (cta && orderSec && "IntersectionObserver" in window) {
-    var heroVisible = true, orderVisible = false;
-    var upd = function () { cta.classList.toggle("show", !heroVisible && !orderVisible); };
+    var heroVisible = true, orderVisible = false, formVisible = false;
+    var upd = function () { cta.classList.toggle("show", !heroVisible && !orderVisible && !formVisible); };
     new IntersectionObserver(function (e) { orderVisible = e[0].isIntersecting; upd(); }).observe(orderSec);
+    var form = document.getElementById("kontakt");
+    if (form && form !== orderSec) new IntersectionObserver(function (e) { formVisible = e[0].isIntersecting; upd(); }).observe(form);
     var hero = document.querySelector(".hero, .phero");
     if (hero) new IntersectionObserver(function (e) { heroVisible = e[0].isIntersecting; upd(); }).observe(hero);
   }
