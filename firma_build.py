@@ -93,11 +93,11 @@ def crumbs(*trail):
     return f'<nav class="crumbs" aria-label="Brødsmuler">{" › ".join(parts)}</nav>'
 
 
-def page_hero(h1, lead, key, kicker="", crumb="", ctas=True, tall=False):
+def page_hero(h1, lead, key, kicker="", crumb="", ctas=True, tall=False, cta_href="#kontakt"):
     cta = ""
     if ctas:
         cta = f"""<div class="hero-cta">
-        <a class="btn btn-lg" href="#kontakt">Få et uforpliktende tilbud</a>
+        <a class="btn btn-lg" href="{cta_href}">Få et uforpliktende tilbud</a>
         <a class="btn btn-ghost light btn-lg" href="{B.tel_href()}" data-track="tel">Ring {B.CO['phone_display']}</a>
       </div>"""
     return f"""
@@ -383,7 +383,8 @@ calc();
 def page_service(s):
     path = svc_url(s)
     hero = page_hero(s["h1"], s.get("lead", ""), s.get("hero_img") or s.get("card_img"),
-                     crumb=crumbs(("Tjenester", "/tjenester/"), (s["name"], "")))
+                     crumb=crumbs(("Tjenester", "/tjenester/"), (s["name"], "")),
+                     cta_href="#priskalkulator" if s.get("pris") else "#kontakt")
     blocks = []
     for i, sec in enumerate(s.get("sections", [])):
         text = paras(sec.get("text", []))
