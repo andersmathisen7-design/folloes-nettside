@@ -344,7 +344,7 @@ def footer(section="ved"):
     </div>
   </div>
   <div class="wrap footer-bottom">
-    <span>© {date.today().year} {esc(CO['legal_name'])}</span>
+    <span>© {date.today().year} {esc(CO['legal_name'])} · Laget av <a href="https://nettsideferdig.no/">Nettsideferdig</a></span>
     <span><a href="/personvernerklaering/">Personvern</a>{'' if (C.GA4_ID or C.GADS_ID or C.META_PIXEL_ID) else ' · Ingen sporingscookies på denne siden'}</span>
   </div>
 </footer>
