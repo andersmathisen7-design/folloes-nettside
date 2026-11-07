@@ -10,6 +10,15 @@ cd "$(dirname "$0")"
 REPO="folloes-nettside"
 OWNER="andersmathisen7-design"
 
+# Etter lanseringen ligger den ekte folloes.no på gh-pages. Da skal testsiden aldri overskrive den.
+if git ls-remote --exit-code "$(git remote get-url origin)" gh-pages >/dev/null 2>&1; then
+  git fetch -q origin gh-pages
+  if git cat-file -e FETCH_HEAD:CNAME 2>/dev/null; then
+    echo "Stopp: gh-pages har eget domene ($(git show FETCH_HEAD:CNAME)), altså den ekte siden. Testsiden publiseres ikke." >&2
+    exit 1
+  fi
+fi
+
 python3 build.py >/dev/null
 python3 sjekk.py | tail -1
 

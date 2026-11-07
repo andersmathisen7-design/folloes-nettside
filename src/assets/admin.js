@@ -20,7 +20,10 @@
     }
   };
   token = store.get();
-  var orders = [], plans = {}, depot = null, today = "", view = "kommende";
+  var orders = [], plans = {}, depot = null, today = "", view = "kommende", fullDays = [];
+  // Avbestilte jobber skjules som standard. Valget huskes på enheten.
+  var CKEY = "folloAdminShowCancelled", showCancelled = false;
+  try { showCancelled = localStorage.getItem(CKEY) === "1"; } catch (e) {}
 
   if (!A.calendarUrl) { $("a-nocal").hidden = false; return; }
 
@@ -69,6 +72,7 @@
           return showLogin(ERR[j.error] || "Noe gikk galt: " + (j.error || "ukjent"));
         }
         orders = j.orders || []; plans = j.plans || {}; depot = j.depot || null; today = j.today || "";
+        fullDays = j.fullDays || [];
         $("a-login").hidden = true; $("a-app").hidden = false; $("a-actions").hidden = false;
         $("a-updated").textContent = "Oppdatert " + new Date().toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
         render();
@@ -89,17 +93,24 @@
 
   function render() {
     var upcoming = view === "kommende";
-    var list = orders.filter(function (o) { return upcoming ? o.date >= today : o.date < today; });
+    var inView = orders.filter(function (o) { return upcoming ? o.date >= today : o.date < today; });
+    var nCancelled = inView.filter(function (o) { return o.status === "Avbestilt"; }).length;
+    $("a-cancelled-n").textContent = nCancelled ? "(" + nCancelled + ")" : "";
+    var list = showCancelled ? inView : inView.filter(function (o) { return o.status !== "Avbestilt"; });
     var byDay = {};
     list.forEach(function (o) { (byDay[o.date] = byDay[o.date] || []).push(o); });
+    // Dager som er satt som fulle, vises også når de ikke har bestillinger, så de kan åpnes igjen.
+    if (upcoming) fullDays.forEach(function (d) { if (d >= today) byDay[d] = byDay[d] || []; });
     var days = Object.keys(byDay).sort();
     if (!upcoming) days.reverse();
 
     // Nøkkeltall for kommende leveringer.
     var active = orders.filter(function (o) { return o.date >= today && o.status !== "Avbestilt"; });
-    $("a-stats").innerHTML = upcoming ?
+    var unpaid = orders.filter(function (o) { return o.status === "Levert" && !o.paid; }).length;
+    $("a-stats").innerHTML = (upcoming ?
       '<div><strong>' + active.length + '</strong><span>leveringer</span></div>' +
-      '<div><strong>' + nb(active.reduce(function (s, o) { return s + o.sacks; }, 0)) + '</strong><span>sekker</span></div>' : "";
+      '<div><strong>' + nb(active.reduce(function (s, o) { return s + o.sacks; }, 0)) + '</strong><span>sekker</span></div>' : "") +
+      (unpaid ? '<div class="warn"><strong>' + unpaid + '</strong><span>levert, ikke betalt</span></div>' : "");
 
     if (!days.length) {
       $("a-list").innerHTML = '<p class="card muted">' + (upcoming ? "Ingen kommende bestillinger." : "Ingen tidligere bestillinger.") + "</p>";
@@ -115,8 +126,11 @@
       var min = plan ? plan.minutter : live.reduce(function (s, o) { return s + o.minutes; }, 0);
       var sacks = live.reduce(function (s, o) { return s + o.sacks; }, 0);
       var pct = Math.min(100, Math.round(min / CAP * 100));
+      var isFull = fullDays.indexOf(d) >= 0;
       return '<section class="admin-day">' +
-        '<header><h2>' + esc(dayLabel(d)) + '</h2>' +
+        '<header><div class="ad-head"><h2>' + esc(dayLabel(d)) + (isFull ? ' <span class="pill pill-full">Satt som full</span>' : "") + '</h2>' +
+        (upcoming ? '<button type="button" class="btn btn-sm btn-ghost" data-full="' + (isFull ? "0" : "1") + '" data-date="' + esc(d) + '">' +
+          (isFull ? "Åpne dagen igjen" : "Sett dagen som full") + '</button>' : "") + '</div>' +
         '<p>' + live.length + ' levering' + (live.length === 1 ? "" : "er") + ' · <strong>' + nb(sacks) + ' sekker</strong> · ' +
         min + ' av ' + CAP + ' min' + (min > CAP ? ' <span class="over">(over tiden)</span>' : ' · ' + (CAP - min) + ' min ledig') + '</p>' +
         '<div class="meter' + (min > CAP ? " over" : "") + '"><span data-pct="' + pct + '"></span></div>' +
@@ -146,15 +160,19 @@
   function card(o, stop) {
     var addr = [o.address, o.area].filter(Boolean).join(", ");
     var done = o.status === "Levert" || o.status === "Avbestilt";
-    var undo = '<button type="button" class="btn btn-sm btn-ghost" data-id="' + esc(o.id) + '" data-status="Ny">Angre</button>';
     var maps = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(addr);
-    var btn = function (s, label) {
-      return '<button type="button" class="btn btn-sm' + (o.status === s ? "" : " btn-ghost") + '" data-id="' + esc(o.id) +
-        '" data-status="' + s + '"' + (o.status === s ? " disabled" : "") + '>' + label + '</button>';
+    var btn = function (s, label, paid, ghost) {
+      return '<button type="button" class="btn btn-sm' + (ghost ? " btn-ghost" : "") + '" data-id="' + esc(o.id) +
+        '" data-status="' + s + '"' + (paid ? ' data-paid="1"' : "") + '>' + label + '</button>';
     };
+    var pill = o.status === "Levert" ? (o.paid ? "Levert og betalt" : "Levert, ikke betalt") : o.status;
+    // Levert, men ikke betalt: kan merkes som betalt senere.
+    var btns = !done ? btn("Levert", "Betalt og levert", true) + btn("Levert", "Bare levert", false, true) + btn("Avbestilt", "Avbestill", false, true) :
+      (o.status === "Levert" && !o.paid ? btn("Levert", "Marker som betalt", true) : "") + btn("Ny", "Angre", false, true);
+    if (o.status !== "Avbestilt") btns += '<button type="button" class="btn btn-sm btn-ghost" data-sacks="' + esc(o.id) + '">Endre sekker</button>';
     return '<article class="card admin-order st-' + esc(o.status.toLowerCase()) + '">' +
       '<div class="ao-head"><strong>' + (stop ? stop.nr + '. ' : "") + esc(o.name || o.address || o.phone || "(uten navn)") + '</strong>' +
-      (done ? '<span class="pill">' + esc(o.status) + '</span>' : "") + '</div>' +
+      (done ? '<span class="pill' + (o.status === "Levert" && !o.paid ? " pill-unpaid" : "") + '">' + esc(pill) + '</span>' : "") + '</div>' +
       '<p class="ao-main"><strong>' + nb(o.sacks) + ' sekker</strong>' + (o.carry ? ' · ' + esc(o.carry) : "") +
       (o.total ? ' · ' + esc(o.total) : "") +
       (stop ? ' · 🚗 ' + stop.ben + ' min ' + (stop.nr === 1 ? "fra lageret" : "fra forrige stopp") : ' · ' + o.minutes + ' min') + '</p>' +
@@ -163,20 +181,92 @@
       (o.email ? ' &nbsp; <a href="mailto:' + esc(o.email) + '">' + esc(o.email) + '</a>' : "") + '</p>' +
       (o.message ? '<p class="ao-msg">💬 ' + esc(o.message) + '</p>' : "") +
       '<p class="muted small">Bestilt ' + esc(o.registered) + '</p>' +
-      '<div class="ao-btns">' + (done ? undo : btn("Levert", "Levert") + btn("Avbestilt", "Avbestill")) + '</div>' +
+      '<div class="ao-btns">' + btns + '</div>' +
       '</article>';
   }
 
   $("a-list").addEventListener("click", function (e) {
+    var f = e.target.closest("button[data-full]");
+    if (f) return setFull(f, f.dataset.date, f.dataset.full === "1");
+    var k = e.target.closest("button[data-sacks]");
+    if (k) return openSacks(k.dataset.sacks);
     var b = e.target.closest("button[data-status]");
     if (!b) return;
     var st = b.dataset.status;
     if (st === "Avbestilt" && !confirm("Avbestille denne leveringen? Tiden blir ledig for andre kunder.")) return;
     b.disabled = true; b.innerHTML = SPIN + "Lagrer …";
-    post({ action: "status", id: b.dataset.id, status: st }).then(function (j) {
+    post({ action: "status", id: b.dataset.id, status: st, paid: b.dataset.paid === "1" }).then(function (j) {
       if (!j.ok) alert(ERR[j.error] || "Kunne ikke lagre: " + (j.error || "ukjent feil"));
       return load();
     }).catch(function () { alert("Fikk ikke kontakt med kalenderen."); load(); });
+  });
+
+  // Endre antall sekker: først nytt tall, så «Er du sikker?» før noe lagres.
+  // Tiden justeres med forskjellen i lossing/bæring, så kjøretiden og eventuelle faste minutter blir som før.
+  var editing = null, confirmStep = false;
+  var dlg = $("a-sacks-dlg");
+  var svc = function (n, carry) {
+    var carried = !/^\s*(ingen|$)/i.test(carry || "");
+    return (D.unload_minutes || 0) + n * (D.unload_minutes_per_sack || 0) + (carried ? n * (D.carry_minutes_per_sack || 0) : 0);
+  };
+  function sacksStep(two) {
+    confirmStep = two;
+    $("as-step1").hidden = two; $("as-step2").hidden = !two;
+    $("as-ok").disabled = false;
+    $("as-ok").textContent = two ? "Ja, endre" : "Neste";
+    $("as-cancel").textContent = two ? "Tilbake" : "Avbryt";
+  }
+  function openSacks(id) {
+    editing = orders.filter(function (o) { return o.id === id; })[0];
+    if (!editing) return;
+    $("as-who").textContent = (editing.name || editing.address || editing.phone || "(uten navn)") + " · " + dayLabel(editing.date);
+    $("as-n").value = editing.sacks;
+    $("as-msg").className = "form-msg"; $("as-msg").textContent = "";
+    sacksStep(false);
+    if (dlg.showModal) dlg.showModal(); else dlg.setAttribute("open", "");
+    $("as-n").focus(); $("as-n").select();
+  }
+  function closeSacks() { editing = null; if (dlg.close) dlg.close(); else dlg.removeAttribute("open"); }
+  $("as-cancel").addEventListener("click", function () { if (confirmStep) { sacksStep(false); $("as-n").focus(); } else closeSacks(); });
+  $("a-sacks").addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (!editing) return;
+    var msg = $("as-msg"), n = parseInt($("as-n").value, 10);
+    if (!(n >= 1 && n <= 1000)) { msg.className = "form-msg err"; msg.textContent = "Skriv et antall mellom 1 og 1000."; return; }
+    if (n === editing.sacks) { closeSacks(); return; }
+    msg.className = "form-msg"; msg.textContent = "";
+    if (!confirmStep) {
+      $("as-q").innerHTML = "Er du sikker på at du vil endre fra <strong>" + nb(editing.sacks) + "</strong> til <strong>" + nb(n) + " sekker</strong>?";
+      sacksStep(true);
+      $("as-ok").focus();
+      return;
+    }
+    var diff = svc(n, editing.carry) - svc(editing.sacks, editing.carry);
+    var body = { action: "sacks", id: editing.id, sacks: n, minutes: Math.max(0, Math.round(editing.minutes + diff)),
+      service: editing.service == null ? null : Math.max(0, Math.round((editing.service + diff) * 10) / 10) };
+    var ok = $("as-ok");
+    ok.disabled = true; ok.innerHTML = SPIN + "Lagrer …";
+    post(body).then(function (j) {
+      if (!j.ok) { sacksStep(true); msg.className = "form-msg err"; msg.textContent = ERR[j.error] || "Kunne ikke lagre: " + (j.error || "ukjent feil"); return; }
+      closeSacks();
+      load();
+    }).catch(function () { sacksStep(true); msg.className = "form-msg err"; msg.textContent = "Fikk ikke kontakt med kalenderen."; });
+  });
+  dlg.addEventListener("close", function () { editing = null; });
+
+  // Sett en dag som full (eller åpne den igjen). Kunder kan da ikke velge dagen i bestillingsskjemaet.
+  function setFull(b, date, full) {
+    b.disabled = true; b.innerHTML = SPIN + "Lagrer …";
+    return post({ action: "full", date: date, full: full }).then(function (j) {
+      if (!j.ok) alert(ERR[j.error] || "Kunne ikke lagre: " + (j.error || "ukjent feil"));
+      return load();
+    }).catch(function () { alert("Fikk ikke kontakt med kalenderen."); load(); });
+  }
+  $("a-full").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var date = $("af-dato").value, btn = $("a-full").querySelector("button");
+    if (!date) return;
+    setFull(btn, date, true).then(function () { btn.disabled = false; btn.textContent = "Sett som full"; $("af-dato").value = ""; });
   });
 
   document.querySelectorAll(".admin-tabs button").forEach(function (b) {
@@ -185,6 +275,13 @@
       document.querySelectorAll(".admin-tabs button").forEach(function (x) { x.classList.toggle("on", x === b); });
       render();
     });
+  });
+
+  $("a-show-cancelled").checked = showCancelled;
+  $("a-show-cancelled").addEventListener("change", function () {
+    showCancelled = this.checked;
+    try { localStorage.setItem(CKEY, showCancelled ? "1" : "0"); } catch (e) {}
+    render();
   });
 
   $("a-login").addEventListener("submit", function (e) {

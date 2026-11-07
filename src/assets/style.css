@@ -348,10 +348,12 @@ textarea.embed { width: 100%; font-family: ui-monospace, Menlo, Consolas, monosp
 .admin-login .check input { width: auto; }
 .admin-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
 .admin-bar p { margin: 0; }
+.admin-toggle { display: flex; align-items: center; gap: 6px; margin: 0; font-size: .95em; cursor: pointer; }
+.admin-toggle input { width: auto; margin: 0; }
 .admin-tabs { display: flex; gap: 4px; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 4px; }
 .admin-tabs button { border: 0; background: none; font: inherit; font-weight: 600; padding: .35em 1em; border-radius: 999px; cursor: pointer; color: var(--ink); }
 .admin-tabs button.on { background: var(--green); color: #fff; }
-.admin-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.admin-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 14px; }
 .admin-stats:empty { display: none; }
 .admin-stats div { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; }
 .admin-stats strong { display: block; font-size: 1.5rem; color: var(--green); line-height: 1.2; }
@@ -380,7 +382,14 @@ textarea.embed { width: 100%; font-family: ui-monospace, Menlo, Consolas, monosp
 .ao-btns .btn:disabled { opacity: 1; cursor: default; }
 .pill { font-size: .78rem; font-weight: 700; padding: .15em .7em; border-radius: 99px; background: var(--bg-alt); color: var(--muted); white-space: nowrap; }
 .st-levert { opacity: .7; }
+.pill-unpaid { background: #fdecea; color: #c0392b; }
+.pill-full { background: #fdecea; color: #c0392b; vertical-align: .15em; }
+.ad-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
 .st-avbestilt { opacity: .5; }
+.admin-dialog { border: 0; max-width: 420px; width: calc(100% - 32px); padding: 20px 22px; }
+.admin-dialog::backdrop { background: rgba(0,0,0,.45); }
+.admin-dialog h2 { font-size: 1.2rem; margin: 0 0 4px; }
+.as-confirm { font-size: 1.05rem; margin: 10px 0; }
 .st-avbestilt .ao-main { text-decoration: line-through; }
 /* Lasting: spinner mens kalenderen svarer (Google Apps Script bruker gjerne noen sekunder). */
 .spinner { display: inline-block; width: 1em; height: 1em; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; vertical-align: -.15em; animation: spin .7s linear infinite; }
@@ -393,7 +402,7 @@ textarea.embed { width: 100%; font-family: ui-monospace, Menlo, Consolas, monosp
 #a-list[aria-busy="true"] { opacity: .5; pointer-events: none; transition: opacity .2s; }
 @media (max-width: 560px) { .admin-stats strong { font-size: 1.2rem; } }
 @media print {
-  .admin-top, .admin-bar, .admin-add, .ao-btns, .admin-stats, .st-avbestilt { display: none !important; }
+  .admin-top, .admin-bar, .admin-add, .ao-btns, .ad-head .btn, .admin-stats, .st-avbestilt { display: none !important; }
   .admin { background: #fff; }
   .admin-order { break-inside: avoid; border: 1px solid #999; }
   .admin-day { break-after: page; }

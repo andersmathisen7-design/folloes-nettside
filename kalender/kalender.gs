@@ -24,8 +24,13 @@
 
 var ARK = "Bestillinger";
 var TIDSSONE = "Europe/Oslo";
+// Bestillingen sendes på e-post herfra (MailApp), så den ikke er avhengig av FormSubmit. Hold adressene like config.py.
+var FIRMA = "Follo Bjørkeved";                 // BRAND
+var TELEFON = "48 99 39 00";                   // CO["phone_display"]
+var BESTILLING_TIL = "amkleven@gmail.com";     // ORDER_EMAIL
+var BESTILLING_KOPI = "post@min-eiendom.no";   // ORDER_CC (tom streng = ingen kopi)
 var KOLONNER = ["ID", "Leveringsdag", "Minutter", "Status", "Navn", "Telefon", "Adresse", "Område", "Sekker",
-                "Bæring", "Totalpris", "E-post", "Melding", "Registrert", "Lossetid", "Lat", "Lon", "Fast tid"];
+                "Bæring", "Totalpris", "E-post", "Melding", "Registrert", "Lossetid", "Lat", "Lon", "Fast tid", "Betalt"];
 var STATUSER = ["Ny", "Bekreftet", "Levert", "Avbestilt"];
 var LEVERINGSDAGER = [1, 2];          // 1 = mandag, 2 = tirsdag
 var MAKS_DAGER_FRAM = 42;             // nettbestillinger maks 6 uker fram
@@ -50,6 +55,15 @@ function onOpen() {
     .addItem("Lag nytt passord til eiersiden", "lagNyttPassord")
     .addItem("Logg ut alle enheter", "loggUtAlle")
     .addToUi();
+}
+
+// Kjør denne én gang fra editoren (velg «godkjennEpost» ved siden av Kjør) når skriptet skal få lov til å sende e-post.
+// Google viser da tillatelsesvinduet. Den sender en testmelding til BESTILLING_TIL, så du ser at det virker.
+function godkjennEpost() {
+  var kvote = MailApp.getRemainingDailyQuota();
+  MailApp.sendEmail({ to: BESTILLING_TIL, subject: FIRMA + ": e-post fra kalenderen virker", name: FIRMA,
+    body: "Skriptet kan nå sende bestillinger på e-post. Mottakere igjen i dag: " + kvote + "." });
+  Logger.log("Testmelding sendt til " + BESTILLING_TIL + ". Mottakere igjen i dag: " + kvote);
 }
 
 // Lager et nytt, tilfeldig passord, viser det én gang, og logger ut alle enheter.
@@ -186,6 +200,7 @@ function bestillinger_() {
       message: String(col(r, "Melding")), service: num_(col(r, "Lossetid")), lat: num_(col(r, "Lat")), lon: num_(col(r, "Lon")),
       // Faste minutter: eieren har skrevet inn tiden selv (telefonbestilling eller rad lagt inn for hånd uten ID).
       fixed: !col(r, "ID") || /^(ja|x|1)$/i.test(String(col(r, "Fast tid")).trim()),
+      paid: /^(ja|x|1)$/i.test(String(col(r, "Betalt")).trim()),
       registered: reg instanceof Date ? Utilities.formatDate(reg, TIDSSONE, "yyyy-MM-dd HH:mm") : String(reg)
     });
   }
@@ -227,19 +242,60 @@ function leggTil_(b, status) {
   return id;
 }
 
-function endreStatus_(id, status) {
+// Betalt kan bare være ja for leverte bestillinger. «Angre» (status Ny) fjerner også betalt.
+function endreStatus_(id, status, betalt) {
   if (STATUSER.indexOf(status) < 0) return { ok: false, error: "ugyldig" };
   var sh = ark_(), rows = sh.getDataRange().getValues(), head = rows[0];
-  var iId = head.indexOf("ID"), iStatus = head.indexOf("Status");
+  var iId = head.indexOf("ID"), iStatus = head.indexOf("Status"), iBetalt = head.indexOf("Betalt");
   if (iStatus < 0) return { ok: false, error: "mangler Status-kolonne" };
   for (var i = 1; i < rows.length; i++) {
     var radId = String((iId >= 0 && rows[i][iId]) || "rad-" + (i + 1));
     if (radId === id) {
       sh.getRange(i + 1, iStatus + 1).setValue(status);
+      if (iBetalt >= 0) sh.getRange(i + 1, iBetalt + 1).setValue(status === "Levert" && betalt ? "ja" : "");
       return { ok: true };
     }
   }
   return { ok: false, error: "fant ikke bestillingen" };
+}
+
+// Nytt antall sekker. Minutter og lossetid er regnet ut på eiersiden (samme formel som bestillingsskjemaet).
+// Lossetid skrives bare hvis raden har det fra før; ellers regnes den fortsatt ut fra sekker og bæring.
+function endreSekker_(id, sekker, minutter, lossetid) {
+  sekker = Math.round(Number(sekker));
+  minutter = Math.round(Number(minutter));
+  if (!(sekker >= 1 && sekker <= 1000) || !(minutter >= 0 && minutter <= 24 * 60)) return { ok: false, error: "ugyldig" };
+  var sh = ark_(), rows = sh.getDataRange().getValues(), head = rows[0];
+  var iId = head.indexOf("ID"), iSekker = head.indexOf("Sekker"), iMin = head.indexOf("Minutter"), iLoss = head.indexOf("Lossetid");
+  if (iSekker < 0) return { ok: false, error: "mangler Sekker-kolonne" };
+  for (var i = 1; i < rows.length; i++) {
+    var radId = String((iId >= 0 && rows[i][iId]) || "rad-" + (i + 1));
+    if (radId === id) {
+      sh.getRange(i + 1, iSekker + 1).setValue(sekker);
+      if (iMin >= 0) sh.getRange(i + 1, iMin + 1).setValue(minutter);
+      var l = service_(lossetid);
+      if (iLoss >= 0 && rows[i][iLoss] !== "" && l != null) sh.getRange(i + 1, iLoss + 1).setValue(l);
+      return { ok: true };
+    }
+  }
+  return { ok: false, error: "fant ikke bestillingen" };
+}
+
+// ------------------------------------------------------------------ fulle dager
+
+// Dager eieren har satt som fulle på eiersiden. Lagres i skriptegenskapene; passerte dager ryddes bort.
+function fulleDager_() {
+  var idag = idag_(), liste = [];
+  try { liste = JSON.parse(PropertiesService.getScriptProperties().getProperty("fulle_dager") || "[]"); } catch (e) {}
+  return liste.filter(function (d) { return /^\d{4}-\d{2}-\d{2}$/.test(d) && d >= idag; }).sort();
+}
+
+function settFull_(dato, full) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dato)) return { ok: false, error: "ugyldig" };
+  var liste = fulleDager_().filter(function (d) { return d !== dato; });
+  if (full && dato >= idag_()) liste.push(dato);
+  PropertiesService.getScriptProperties().setProperty("fulle_dager", JSON.stringify(liste.sort()));
+  return { ok: true, fullDays: liste };
 }
 
 // ------------------------------------------------------------------ ruter
@@ -448,14 +504,15 @@ function ledig_(b) {
   if (!(min > 0 && min <= 24 * 60) || !(kap > 0 && kap <= 24 * 60)) return { ok: false, error: "ugyldig" };
   var ny = { address: String(b.address || "").slice(0, 120), area: String(b.area || "").slice(0, 60), service: b.service, minutes: min };
   medKoord_(ny);
-  var planer = planer_(perDag_(), ny), fits = {};
+  var planer = planer_(perDag_(), ny), fits = {}, fulle = fulleDager_();
   Object.keys(planer).forEach(function (d) { fits[d] = !(planer[d].minutter > 0) || planer[d].med <= kap; });
-  return { ok: true, found: harKoord_(ny), fits: fits, booked: bestilt_(planer) };
+  fulle.forEach(function (d) { fits[d] = false; });
+  return { ok: true, found: harKoord_(ny), fits: fits, booked: bestilt_(planer), fullDays: fulle };
 }
 
-// GET: bare bestilt tid per dag (brukes av bestillingsskjemaet). Ingen kundedata.
+// GET: bare bestilt tid per dag og dagene som er satt som fulle (brukes av bestillingsskjemaet). Ingen kundedata.
 function doGet() {
-  return svar_({ booked: bestilt_() });
+  return svar_({ booked: bestilt_(), fullDays: fulleDager_() });
 }
 
 function doPost(e) {
@@ -466,14 +523,16 @@ function doPost(e) {
   // Eiersiden.
   if (b.action === "login") return svar_(loggInn_(b.password, b.remember === true));
   if (b.action === "logout") { loggUt_(b.token); return svar_({ ok: true }); }
-  if (b.action === "list" || b.action === "status" || b.action === "add") {
+  if (b.action === "list" || b.action === "status" || b.action === "add" || b.action === "full" || b.action === "sacks") {
     if (!gyldigBillett_(b.token)) return svar_({ ok: false, error: "token" });
     if (b.action === "list") {
       var alle = bestillinger_();
       fyllKoordinater_(alle);
-      return svar_({ ok: true, orders: alle, today: idag_(), plans: planer_(perDag_(alle)), depot: LAGER });
+      return svar_({ ok: true, orders: alle, today: idag_(), plans: planer_(perDag_(alle)), depot: LAGER, fullDays: fulleDager_() });
     }
-    if (b.action === "status") return svar_(endreStatus_(String(b.id || ""), String(b.status || "")));
+    if (b.action === "status") return svar_(endreStatus_(String(b.id || ""), String(b.status || ""), b.paid === true));
+    if (b.action === "sacks") return svar_(endreSekker_(String(b.id || ""), b.sacks, b.minutes, b.service));
+    if (b.action === "full") return svar_(settFull_(String(b.date || ""), b.full === true));
     if (!/^\d{4}-\d{2}-\d{2}$/.test(String(b.date || "")) || !(Number(b.minutes) >= 0 && Number(b.minutes) <= 24 * 60))
       return svar_({ ok: false, error: "ugyldig" });
     // Har eieren skrevet inn minuttene selv, kommer ingen lossetid. Da brukes minuttene som de er.
@@ -496,7 +555,7 @@ function doPost(e) {
   medKoord_(b);   // utenfor låsen, siden oppslaget kan ta litt tid
 
   // Lås, så to kunder som sender samtidig ikke begge får den siste plassen.
-  var lock = LockService.getScriptLock();
+  var id, lock = LockService.getScriptLock();
   lock.waitLock(15000);
   try {
     // Vern mot at noen fyller kalenderen med falske bestillinger.
@@ -505,15 +564,90 @@ function doPost(e) {
     b.minutes = min;
     var dager = perDag_(), enDag = {};
     if (dager[dag]) enDag[dag] = dager[dag];
+    if (fulleDager_().indexOf(dag) >= 0) return svar_({ ok: false, full: true, booked: bestilt_(planer_(dager)), fullDays: fulleDager_() });
     var plan = planer_(enDag, b)[dag];
     // En tom dag tar alltid imot, også en stor bestilling som alene er over grensen.
     if (plan && plan.minutter > 0 && plan.med > kap) return svar_({ ok: false, full: true, booked: bestilt_(planer_(dager)) });
     b.name = "";
     b.fixed = false;   // bare eieren kan sette faste minutter
-    var id = leggTil_(b, "Ny");
+    id = leggTil_(b, "Ny");
     cache.put("nettbestillinger", String(n + 1), 3600);
-    return svar_({ ok: true, id: id });
   } finally {
     lock.releaseLock();
   }
+  // E-posten sendes utenfor låsen. Svarer vi «mailed: true», hopper nettsiden over FormSubmit.
+  var mailed = sendBestillingEpost_(b, id), ut = { ok: true, id: id, mailed: mailed };
+  if (!mailed && SISTE_EPOSTFEIL_) ut.mailError = SISTE_EPOSTFEIL_;
+  return svar_(ut);
+}
+
+// ------------------------------------------------------------------ e-post om bestillingen
+
+// Én linje, uten linjeskift (så tekst fra nettsiden aldri kan lage ekstra e-posthoder), og uten formeltegn først.
+function linje_(v, max) { return tekst_(String(v == null ? "" : v).replace(/[\r\n]+/g, " "), max); }
+
+// Leveringsdagen i klartekst, regnet ut fra den kontrollerte datoen (yyyy-mm-dd), ikke fra tekst nettsiden sender.
+var UKEDAGER = ["søndag", "mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lørdag"];
+var MANEDER = ["januar", "februar", "mars", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "desember"];
+function dagTekst_(iso) {
+  var d = new Date(String(iso) + "T12:00:00Z");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(iso)) || isNaN(d.getTime())) return String(iso);
+  return UKEDAGER[d.getUTCDay()] + " " + d.getUTCDate() + ". " + MANEDER[d.getUTCMonth()];
+}
+var HYPPIGHETER = ["Fast levering hver 2. uke", "Fast levering hver 4. uke", "Fast levering hver 6. uke"];
+
+// Teksten til eieren og bekreftelsen til kunden, for en nettbestilling som akkurat er lagt i arket.
+// Eieren får alt kunden skrev. Kunden får bare en fast tekst med tall og dato vi har kontrollert selv, aldri fritekst
+// fra skjemaet: adressen til kunden kommer fra nettsiden, så ellers kunne hvem som helst sende falske e-poster fra
+// kontoen vår til hvem som helst.
+function bestillingEpost_(b, id) {
+  var hyppighet = linje_(b.frequency, 60), abonnement = !!hyppighet, kort = hyppighet.replace(/^Fast levering /, "").toLowerCase();
+  var hyppKunde = HYPPIGHETER.indexOf(hyppighet) >= 0 ? hyppighet : "";
+  var sekker = Math.max(0, Math.min(1000, Math.round(Number(b.sacks)) || 0));
+  var dag = dagTekst_(b.date), dagStor = dag.charAt(0).toUpperCase() + dag.slice(1);
+  var adresse = linje_(b.address, 120), omrade = linje_(b.area, 60), total = linje_(b.total, 40);
+  var subject = (abonnement ? "Nytt vedabonnement: " + sekker + " sekker " + kort : "Ny vedbestilling: " + sekker + " sekker") +
+    " – " + adresse + ", " + omrade + " – " + dag;
+  var linjer = [
+    (abonnement ? "Nytt vedabonnement" : "Ny vedbestilling") + " fra follobjorkeved.no", "",
+    (abonnement ? "Første leveringsdag: " : "Leveringsdag: ") + dagStor + " (" + linje_(b.date, 10) + ")",
+    "Antall sekker: " + sekker,
+    "Bæring: " + linje_(b.carry, 80)];
+  if (abonnement) linjer.push("Hyppighet: " + hyppighet);
+  linjer = linjer.concat([
+    "Adresse: " + adresse + ", " + omrade,
+    "Telefon: " + linje_(b.phone, 30),
+    "E-post: " + linje_(b.email, 100),
+    "Totalpris: " + total + (abonnement ? " per levering" : ""),
+    "Beregnet tid: " + (Math.round(Number(b.minutes)) || 0) + " min (kjøring, lossing og bæring)",
+    "Melding: " + tekst_(b.message, 1000),
+    "ID: " + id + " (står som «Ny» på eiersiden)", "",
+    "Eiersiden: https://follobjorkeved.no/admin/"]);
+  var kunde = "Takk for bestillingen hos " + FIRMA + "! Vi har mottatt bestilling på " + sekker + " sekker bjørkeved" +
+    (hyppKunde ? ", " + hyppKunde.toLowerCase() : "") + ". Veden kommer på dagen du valgte. " +
+    (hyppKunde ? "Første leveringsdag: " : "Ønsket leveringsdag: ") + dag + ". " +
+    "Prisen du så i skjemaet gjelder, og du betaler ingenting nå. Spørsmål? Ring " + TELEFON + ".";
+  return { subject: subject, body: linjer.join("\n"), customerSubject: "Takk for bestillingen hos " + FIRMA, customerBody: kunde };
+}
+
+// Sender bestillingen til eieren (med kopi) og bekreftelsen til kunden. Svarer true når eieren har fått den.
+// Feiler det (kvote, manglende tilgang), svarer vi false, og nettsiden sender gjennom FormSubmit i stedet.
+// Siste feil fra MailApp, så svaret til nettsiden sier hvorfor e-posten ikke gikk (typisk manglende tillatelse).
+var SISTE_EPOSTFEIL_ = "";
+function sendBestillingEpost_(b, id) {
+  var m, epost = String(b.email || "").trim(), gyldig = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(epost);
+  try {
+    m = bestillingEpost_(b, id);
+    var til = { to: BESTILLING_TIL, subject: m.subject, body: m.body, name: FIRMA };
+    if (BESTILLING_KOPI) til.cc = BESTILLING_KOPI;
+    if (gyldig) til.replyTo = epost;
+    MailApp.sendEmail(til);
+  } catch (e) {
+    SISTE_EPOSTFEIL_ = String((e && e.message) || e);
+    return false;
+  }
+  if (gyldig) {
+    try { MailApp.sendEmail({ to: epost, subject: m.customerSubject, body: m.customerBody, name: FIRMA }); } catch (e) {}
+  }
+  return true;
 }

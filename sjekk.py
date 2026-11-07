@@ -48,15 +48,18 @@ def target(path):
 
 def main():
     pages = {}
+    redirects = set()  # sider som bare sender videre (gamle adresser)
     for f in OUT.rglob("*.html"):
         pg = Page()
         pg.feed(f.read_text(encoding="utf-8"))
         rel = "/" + str(f.relative_to(OUT)).replace("index.html", "")
         pages[rel] = pg
+        if 'http-equiv="refresh"' in f.read_text(encoding="utf-8"):
+            redirects.add(rel)
     errors = []
     for rel, pg in sorted(pages.items()):
         is_tool = rel.startswith(("/widget/", "/admin/")) or "refresh" in (OUT / rel.lstrip("/")).as_posix()
-        if not rel.startswith("/widget/") and not rel.startswith("/personvern/"):
+        if not rel.startswith("/widget/") and rel not in redirects:
             if pg.h1 != 1 and not rel.startswith("/admin/"):
                 errors.append(f"{rel}: {pg.h1} stk <h1>")
             if not pg.title:

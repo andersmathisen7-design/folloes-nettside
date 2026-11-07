@@ -1,0 +1,52 @@
+name: Publiser folloes.no
+
+# Bygger nettsiden og legger den på gh-pages-grenen med eget domene (folloes.no).
+#
+# FØR LANSERING kjøres den bare med knappen «Run workflow» (Actions → Publiser folloes.no),
+# slik at testsiden ikke blir overskrevet ved et uhell. Se LANSERING.md.
+# ETTER LANSERING: fjern «#» foran de tre push-linjene under, så publiseres siden ved hver endring på main.
+on:
+  workflow_dispatch:
+  # push:
+  #   branches: [main]
+  #   paths-ignore: ["ukesrapporter/**", "*.md", "kalender/**", "tests/**"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Bygg og sjekk
+        env:
+          SITE_URL: https://folloes.no
+          BASE_PATH: ""
+        run: |
+          python3 build.py
+          python3 sjekk.py
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ github.token }}
+          publish_dir: ./public
+          publish_branch: gh-pages
+          force_orphan: true
+          cname: folloes.no
+      # Varsler Bing (og dermed ChatGPT-søk/Copilot) om alle sidene via IndexNow.
+      - name: Varsle Bing via IndexNow
+        continue-on-error: true
+        run: |
+          sleep 60
+          urls=$(grep -o '<loc>[^<]*' public/sitemap.xml | sed 's/<loc>//' | python3 -c "import sys,json;print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))")
+          curl -sS -m 30 -X POST https://api.indexnow.org/indexnow \
+            -H "Content-Type: application/json; charset=utf-8" \
+            -d "{\"host\":\"folloes.no\",\"key\":\"e81064f97a600ac2437dd7b14caf8227\",\"keyLocation\":\"https://folloes.no/e81064f97a600ac2437dd7b14caf8227.txt\",\"urlList\":$urls}" \
+            -w "IndexNow svarte: %{http_code}\n"
