@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Bygger testversjonen og legger den på gh-pages-grenen (GitHub Pages).
-# Testversjonen blir ikke indeksert, bruker ikke den ekte leveringskalenderen,
-# og skjemaene går bare til ORDER_EMAIL. Ingen GitHub Actions: alt kjøres lokalt.
+# Testversjonen blir ikke indeksert og teller ikke i GoatCounter. Skjemaene går til appen
+# Nettsideferdig (APP_URL), som er i testmodus til prislisten er bekreftet. Ingen GitHub Actions: alt kjøres lokalt.
 #
 #   ./publiser-test.sh
 set -euo pipefail

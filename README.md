@@ -11,7 +11,8 @@ Ny, rask og statisk versjon av **folloes.no** (i dag WordPress med Elementor), m
 | `/garasjevask/` | Egen del av nettstedet, som bjørkeved (eget menypunkt, egen underlinje og egen blokk på forsiden, ikke blant tjenestene). Kopiert fra garasjevasken.no: priser per parkeringsplass, priskalkulator, risiko og forberedelser. Kalkulatoren fyller ut kontaktskjemaet. Teksten står i `GARASJEVASK_SIDE` og prisene i `GARASJEVASK` i `firma_innhold.py` |
 | `/om-oss/`, `/referanser/`, `/kontakt-oss/`, `/personvernerklaering/`, `/takk-for-din-henvendelse/` | Som på folloes.no. Personvernerklæringen dekker nå både kontaktskjemaet og vedbestillinger |
 | `/salg-av-bjorkeved/` | Forsiden for bjørkeved (var forsiden på follobjorkeved.no). Erstatter den gamle siden med samme adresse på folloes.no |
-| `/ved-as/` … `/ved-enebakk/`, `/vedabonnement/`, `/artikler/`, `/vedpris/`, `/fyre-i-dag/`, `/verktoy/`, `/data/`, `/presse/`, `/admin/`, `/takk/` | Resten av bjørkeved-sidene, uendret adresse fra follobjorkeved.no |
+| `/ved-as/` … `/ved-enebakk/`, `/vedabonnement/`, `/artikler/`, `/vedpris/`, `/fyre-i-dag/`, `/verktoy/`, `/data/`, `/presse/`, `/takk/` | Resten av bjørkeved-sidene, uendret adresse fra follobjorkeved.no |
+| `/admin/` | Sender videre til eiersiden i appen: https://folloes.app.nettsideferdig.no/admin/ |
 
 Tekst og bilder til firmasidene ligger i `firma_innhold.py` (hentet fra folloes.no i oktober 2026, med skrivefeil rettet). Sidene lages i `firma_build.py`. Bjørkeved-sidene lages som før i `build.py`, og toppen, menyen og bunnen er felles for alle sider (`head()` og `footer()` i `build.py`).
 
@@ -26,7 +27,7 @@ cd public && python3 -m http.server 8000   # se siden på http://localhost:8000
 ## Testside
 
 `./publiser-test.sh` bygger en testversjon og legger den på `gh-pages`-grenen: **https://andersmathisen7-design.github.io/folloes-nettside/**.
-Testversjonen har en gul stripe øverst og blir ikke indeksert av Google. Den bruker ikke den ekte leveringskalenderen, og skjemaene går bare til `ORDER_EMAIL` (ikke kopi til firmaet). Det brukes ikke GitHub Actions.
+Testversjonen har en gul stripe øverst og blir ikke indeksert av Google. Skjemaene går til samme app som den ekte siden (se under), som er i testmodus til prislisten er bekreftet. Det brukes ikke GitHub Actions.
 
 ## Endringer fra folloes.no (UX)
 
@@ -46,6 +47,10 @@ Se **[LANSERING.md](LANSERING.md)**: hva som er gjort, hva som skjer på lanseri
 - `.github/workflows/pages.yml` publiserer folloes.no (foreløpig bare med knapp i Actions).
 - `./hent-ved.sh` henter nye endringer fra follobjorkeved.no (repoet ved-folle-eiendom). Sist hentet: `.ved-synk`.
 - `python3 lag-omdirigering.py` lager omdirigeringssiden for follobjorkeved.no i `public-omdirigering/`.
-- Kontaktskjemaet bruker samme FormSubmit-adresse som vedbestillingene (`ORDER_EMAIL`, kopi til `ORDER_CC`).
-- **Database:** `server/` er serveren med databasen for bestillinger og henvendelser (Cloudflare Worker + D1). Se `server/README.md`. Den tas i bruk ved å sette `SERVER_URL` i `config.py`.
+- **Skjemaene går til appen Nettsideferdig** (`APP_URL` i `config.py`, https://folloes.app.nettsideferdig.no), ikke til FormSubmit eller Google-regnearket:
+  - Vedbestillingen (`src/assets/app.js`): dagene og «Fullt»/«Ledig» fra `GET /api/leveringsdager` når adressen er skrevet, bestillingen til `POST /api/bestill-levering` (ingen beløp; appen regner prisen og sender kunden bekreftelse på e-post). Varen heter «Bjørkeved 40 L» i appen, og bæringen er tillegg med samme navn som i `CARRY_OPTIONS`.
+  - Kontaktskjemaet og garasjevask-kalkulatoren: `POST /api/henvendelse`.
+  - Eiersiden (bestillinger, fulle dager, henvendelser) er appens admin. `/admin/` på nettstedet sender dit.
+  - `APP_URL=http://127.0.0.1:8790 python3 build.py` bygger mot en lokal (falsk) app.
+- `server/` og `kalender/` (Cloudflare Worker + D1 og Google-regnearket) brukes ikke lenger av nettsiden.
 - Tester: se `tests/README.md` og `cd server && npm test`.

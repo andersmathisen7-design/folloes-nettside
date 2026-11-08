@@ -29,16 +29,12 @@ TODAY = date.today().isoformat()
 URL = (os.environ.get("SITE_URL") or C.SITE_URL).rstrip("/")
 BASE = os.environ.get("BASE_PATH", "").rstrip("/")
 DOMAIN = URL.split("//", 1)[-1]
-# TESTSIDE=1 lager en testversjon (GitHub Pages): ingen indeksering, ingen ekte leveringskalender, ingen GoatCounter,
-# og skjemaene går bare til ORDER_EMAIL (ikke kopi til firmaet).
+# TESTSIDE=1 lager en testversjon (GitHub Pages): ingen indeksering og ingen GoatCounter. Skjemaene går til samme app
+# (APP_URL), som er i testmodus til prislisten er bekreftet.
 TEST = os.environ.get("TESTSIDE") == "1"
-# Serveren (server/) tar over for regnearket når SERVER_URL er satt.
-SERVER = "" if TEST else (os.environ.get("SERVER_URL") or getattr(C, "SERVER_URL", "") or "").rstrip("/")
-if SERVER:
-    C.DELIVERY_DAYS = dict(C.DELIVERY_DAYS, calendar_url=SERVER)
+# Appen Nettsideferdig tar imot vedbestillinger og henvendelser. APP_URL i miljøet overstyrer (f.eks. en falsk app lokalt i tester).
+APP = (os.environ.get("APP_URL") or C.APP_URL).rstrip("/")
 if TEST:
-    C.DELIVERY_DAYS = dict(C.DELIVERY_DAYS, calendar_url="")
-    C.ORDER_CC = []
     C.GOATCOUNTER = ""  # testsiden skal ikke telle med i statistikken
 P = C.PRODUCT
 CO = C.COMPANY
@@ -279,7 +275,7 @@ def head(title, desc, path, ld="", noindex=False, section="ved", og_image="", pr
 </head>
 <body class="s-{section}">
 <a class="skip" href="#innhold">Hopp til innhold</a>
-{'<div class="test-banner">Testside. Dette er ikke den ekte nettsiden. Skjemaene sendes bare til utvikleren, og leveringsdagene er ikke ekte.</div>' if TEST else ''}
+{'<div class="test-banner">Testside. Dette er ikke den ekte nettsiden. Bestillinger og meldinger går til appen i testmodus.</div>' if TEST else ''}
 <div class="topstrip">
   <div class="wrap topstrip-in">
     <p>Vaktmester- og vedlikeholdstjenester i Follo · {esc(CO['street'])}, {CO['postal_code']} {esc(CO['city'])}</p>
@@ -366,16 +362,18 @@ def site_js_config():
         "price": P["price"],
         "kg": P["kg"],
         "deliveryFee": C.DELIVERY_FEE,
-        "endpoint": f"https://formsubmit.co/ajax/{C.ORDER_EMAIL}",
-        # Reserve-adresse hvis skjemaet feiler (ORDER_EMAIL kan være FormSubmit-koden i stedet for en adresse).
-        "orderEmail": C.ORDER_EMAIL if "@" in C.ORDER_EMAIL else CO["email"],
-        "orderCc": ",".join(C.ORDER_CC),
+        # Appen Nettsideferdig: leveringsdager, vedbestillinger og henvendelser (src/assets/app.js).
+        "app": APP,
+        # Vare og tillegg i appen finnes på navnet: «Bjørkeved 40 L», og bæringen med samme tekst som i CARRY_OPTIONS.
+        "appVare": "Bjørkeved 40 L",
+        "carry": {k: label for k, label, _ in C.CARRY_OPTIONS},
+        # Området legges til adressen som kommune, så Kartverket finner den («Kolbotnveien 20, Nordre Follo»).
+        "areaKommune": {a["name"]: a["kommune"].removesuffix(" kommune") for a in C.AREAS},
         "brand": C.BRAND,
         "phone": CO["phone_display"],
         "adsConversion": C.GADS_CONVERSION,
         "base": BASE,
         "days": C.DELIVERY_DAYS,
-        "server": SERVER,
     }
 
 
@@ -488,14 +486,8 @@ def order_form(area_name="", freq="en-gang", qty=20, chips=(10, 20, 30, 50)):
       </ul>
       <p class="muted">Vil du heller ringe? <a href="tel:{tel}" data-track="tel">{CO['phone_display']}</a></p>
     </div>
-    <form class="card form" id="order-form" action="https://formsubmit.co/{C.ORDER_EMAIL}" method="POST" novalidate>
-      <input type="hidden" name="_subject" value="Ny vedbestilling – {esc(C.BRAND)}">
-      <input type="hidden" name="_template" value="table">{f"""
-      <input type="hidden" name="_cc" value="{esc(','.join(C.ORDER_CC))}">""" if C.ORDER_CC else ""}
-      <input type="hidden" name="_next" value="{URL}/takk/">
+    <form class="card form" id="order-form" novalidate>
       <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
-      <input type="hidden" name="Side" value="">
-      <input type="hidden" name="Kampanje" value="">
 
       <fieldset>
         <legend><span class="step-no">1</span> Hvor mye ved?</legend>
@@ -545,6 +537,8 @@ def order_form(area_name="", freq="en-gang", qty=20, chips=(10, 20, 30, 50)):
 
       <fieldset>
         <legend><span class="step-no">3</span> Hvordan når vi deg?</legend>
+        <label for="f-navn">Navn</label>
+        <input id="f-navn" name="Navn" autocomplete="name" required>
         <div class="row2">
           <div><label for="f-tlf">Telefon <span class="muted">· hvis vi må nå deg om leveringen</span></label>
           <input id="f-tlf" name="Telefon" type="tel" inputmode="tel" autocomplete="tel" required></div>
@@ -827,12 +821,8 @@ def page_takk():
 
 
 def page_admin():
-    """Eiersiden: oversikt over bestillinger per leveringsdag. Dataene hentes fra kalenderen etter innlogging med passord."""
-    cfg = {"calendarUrl": C.DELIVERY_DAYS.get("calendar_url", ""), "days": C.DELIVERY_DAYS,
-           "areas": [a["name"] for a in C.AREAS] + ["Annet"], "base": BASE, "server": bool(SERVER)}
-    connect = SERVER if SERVER else "https://script.google.com https://script.googleusercontent.com"
-    pw_hjelp = ("Passordet lages på serveren: <code>cd server &amp;&amp; npm run passord</code> (eller be Claude om det)." if SERVER
-                else "Passordet lager du i regnearket: menyen <strong>Vedlevering → Lag nytt passord til eiersiden</strong>.")
+    """Eiersiden er appens admin (Nettsideferdig). /admin/ på nettstedet sender bare videre dit."""
+    to = f"{APP}/admin/"
     return f"""<!doctype html>
 <html lang="nb">
 <head>
@@ -840,106 +830,15 @@ def page_admin():
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src {connect}; form-action 'none'; base-uri 'none'">
-<title>Bestillinger | {esc(C.BRAND)}</title>
+<title>Eiersiden | {esc(C.BRAND)}</title>
+<meta http-equiv="refresh" content="0; url={to}">
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/assets/style.css">
 </head>
-<body class="admin">
-<header class="admin-top">
-  <div class="wrap admin-top-in">
-    <strong>🪵 {esc(C.BRAND)} · Bestillinger</strong>
-    <div class="admin-actions" id="a-actions" hidden>
-      <button type="button" class="btn btn-sm btn-ghost" id="a-refresh">Oppdater</button>
-      <button type="button" class="btn btn-sm btn-ghost" id="a-print">Skriv ut</button>
-      <button type="button" class="btn btn-sm btn-ghost" id="a-logout">Logg ut</button>
-    </div>
-  </div>
-</header>
-<main class="wrap admin-main">
-  <div class="admin-loading" id="a-loading" role="status" hidden><span class="spinner" aria-hidden="true"></span>Henter bestillinger …</div>
-  <form class="card admin-login" id="a-login" hidden>
-    <h1>Logg inn</h1>
-    <p class="muted">{pw_hjelp}</p>
-    <input type="text" name="username" value="eier" autocomplete="username" hidden>
-    <label for="a-key">Passord</label>
-    <input id="a-key" type="password" autocomplete="current-password" required>
-    <label class="check"><input type="checkbox" id="a-remember"> Husk meg på denne enheten i 30 dager</label>
-    <button class="btn btn-block" type="submit">Logg inn</button>
-    <p class="form-msg err" id="a-login-msg"></p>
-  </form>
-  <div id="a-app" hidden>
-    <div class="admin-bar">
-      <div class="admin-tabs" role="tablist">
-        <button type="button" role="tab" data-view="kommende" class="on">Kommende</button>
-        <button type="button" role="tab" data-view="tidligere">Tidligere</button>
-        {'<button type="button" role="tab" data-view="henvendelser">Henvendelser <span class="pill" id="a-inq-n" hidden></span></button>' if SERVER else ""}
-      </div>
-      <label class="check admin-toggle"><input type="checkbox" id="a-show-cancelled"> <span id="a-toggle-txt">Vis avbestilte</span> <span id="a-cancelled-n"></span></label>
-      <p class="muted small" id="a-updated"></p>
-    </div>
-    <div id="a-stats" class="admin-stats"></div>
-    <details class="card admin-add">
-      <summary>+ Legg inn telefonbestilling</summary>
-      <form id="a-add" class="form" novalidate>
-        <div class="row2">
-          <div><label for="ad-dato">Leveringsdag</label><input id="ad-dato" type="date" required></div>
-          <div><label for="ad-omrade">Område</label><select id="ad-omrade"></select></div>
-        </div>
-        <div class="row2">
-          <div><label for="ad-navn">Navn <span class="muted">(valgfritt)</span></label><input id="ad-navn"></div>
-          <div><label for="ad-tlf">Telefon</label><input id="ad-tlf" type="tel"></div>
-        </div>
-        <label for="ad-adresse">Adresse</label><input id="ad-adresse">
-        <div class="row2">
-          <div><label for="ad-sekker">Sekker</label><input id="ad-sekker" type="number" min="1" value="50"></div>
-          <div><label for="ad-baering">Bæring</label><select id="ad-baering"><option value="">Ingen bæring</option><option value="Bæres inn">Bæres inn</option></select></div>
-        </div>
-        <div class="row2">
-          <div><label for="ad-min">Minutter <span class="muted">(regnes ut)</span></label><input id="ad-min" type="number" min="0"></div>
-          <div><label for="ad-pris">Pris</label><input id="ad-pris"></div>
-        </div>
-        <label for="ad-melding">Melding</label><textarea id="ad-melding" rows="2"></textarea>
-        <button class="btn" type="submit">Lagre bestilling</button>
-        <p class="form-msg" id="a-add-msg"></p>
-      </form>
-    </details>
-    <details class="card admin-add">
-      <summary>Sett en dag som full</summary>
-      <form id="a-full" class="form" novalidate>
-        <p class="muted small">Kundene kan ikke velge dagen i bestillingsskjemaet. Bestillinger som allerede er lagt inn, blir stående. Åpne dagen igjen med knappen ved dagen i lista.</p>
-        <label for="af-dato">Leveringsdag</label><input id="af-dato" type="date" required>
-        <button class="btn" type="submit">Sett som full</button>
-      </form>
-    </details>
-    <div id="a-list" aria-live="polite"></div>
-  </div>
-  <dialog class="card admin-dialog" id="a-sacks-dlg" aria-labelledby="as-title">
-    <form id="a-sacks" class="form" novalidate>
-      <h2 id="as-title">Endre antall sekker</h2>
-      <p class="muted small" id="as-who"></p>
-      <div id="as-step1">
-        <label for="as-n">Antall sekker</label><input id="as-n" type="number" min="1" max="1000" inputmode="numeric" required>
-        <p class="muted small">Tiden for leveringen regnes ut på nytt. Prisen endres ikke.</p>
-      </div>
-      <div id="as-step2" hidden>
-        <p class="as-confirm" id="as-q"></p>
-      </div>
-      <p class="form-msg" id="as-msg"></p>
-      <div class="ao-btns">
-        <button class="btn" type="submit" id="as-ok">Neste</button>
-        <button class="btn btn-ghost" type="button" id="as-cancel">Avbryt</button>
-      </div>
-    </form>
-  </dialog>
-  <div class="card" id="a-nocal" hidden>
-    <h1>Kalenderen er ikke satt opp</h1>
-    <p>Eiersiden henter bestillingene fra leveringskalenderen (et Google-regneark). Sett den opp som beskrevet i <code>kalender/README.md</code>, og legg adressen inn som <code>calendar_url</code> i <code>config.py</code>.</p>
-    <p>Til da kommer alle bestillinger som før på e-post.</p>
-  </div>
-</main>
-<script type="application/json" id="admin-cfg">{json.dumps(cfg, ensure_ascii=False).replace("</", "<\\/")}</script>
-<script src="/assets/admin.js" defer></script>
+<body>
+<main class="section"><div class="wrap narrow center">
+<p>Bestillingene og henvendelsene ligger nå i appen. Gå til <a href="{to}">{esc(to)}</a>.</p>
+</div></main>
 </body>
 </html>
 """
@@ -947,7 +846,6 @@ def page_admin():
 
 def page_personvern():
     path = "/personvernerklaering/"
-    cal = bool(C.DELIVERY_DAYS.get("calendar_url"))
     body = f"""
 <section class="section">
   <div class="wrap narrow prose">
@@ -956,10 +854,10 @@ def page_personvern():
     <p>{esc(CO['legal_name'])} (org.nr. {CO['org_nr']}), {esc(CO['street'])}, {CO['postal_code']} {esc(CO['city'])}, er ansvarlig for personopplysningene som samles inn på denne nettsiden.</p>
     <h2>Hva vi samler inn</h2>
     <p><strong>Kontaktskjemaet:</strong> navnet ditt, telefonnummer og/eller e-post, hvilken tjeneste det gjelder og det du skriver i meldingen. Vi bruker opplysningene til å svare deg og gi deg et tilbud.</p>
-    <p><strong>Bestilling av ved:</strong> telefonnummeret ditt, e-postadressen din, leveringsadressen og det du skriver i meldingsfeltet. Vi bruker opplysningene bare til å behandle og levere bestillingen, og til å sende faktura.</p>
+    <p><strong>Bestilling av ved:</strong> navnet ditt, telefonnummeret ditt, e-postadressen din, leveringsadressen og det du skriver i meldingsfeltet. Vi bruker opplysningene bare til å behandle og levere bestillingen, og til å sende faktura.</p>
     <p>Rettslig grunnlag er avtale, eller tiltak du ber om før en avtale inngås (GDPR art. 6 nr. 1 b).</p>
     <h2>Hvem som behandler opplysningene</h2>
-    <p>{SERVER_PERSONVERN if SERVER else ("Kontaktskjemaet sendes til oss på e-post gjennom tjenesten FormSubmit (formsubmit.co). " + ("Vedbestillinger lagres i et regneark hos Google, som sender bestillingen til oss på e-post og sender deg en bekreftelse, slik at vi kan planlegge leveringene. For å planlegge kjøreruten slår vi opp adressen hos Kartverket og sender koordinatene (ikke navn eller telefon) til rutetjenesten OSRM. Svarer ikke regnearket, sendes bestillingen via FormSubmit." if cal else "Det samme gjelder vedbestillinger."))} Vi selger ikke opplysningene dine og deler dem ikke med andre.</p>
+    <p>{APP_PERSONVERN} Vi selger ikke opplysningene dine og deler dem ikke med andre.</p>
     <h2>Hvor lenge vi lagrer dem</h2>
     <p>Vi sletter opplysningene når de ikke lenger trengs. Unntaket er det bokføringsloven krever at vi tar vare på, som er 5 år.</p>
     <h2>Informasjonskapsler (cookies)</h2>
@@ -1728,10 +1626,11 @@ def main():
     print(f"Bygget {len(indexable) + 5} sider til {OUT}/ for {URL}")
 
 
-SERVER_PERSONVERN = ("Henvendelser og vedbestillinger lagres i vår database hos Cloudflare, slik at vi kan svare deg og planlegge leveringene. "
-    "Vi får dem på e-post, og du får en bekreftelse på vedbestillingen. E-postene sendes gjennom tjenesten Resend. "
-    "For å planlegge kjøreruten slår vi opp adressen hos Kartverket og sender koordinatene (ikke navn eller telefon) til rutetjenesten OSRM. "
-    "Får vi ikke sendt e-posten, går skjemaet til oss gjennom tjenesten FormSubmit (formsubmit.co) i stedet.")
+APP_PERSONVERN = ("Vedbestillinger og meldinger fra kontaktskjemaet lagres hos Nettsideferdig, som er vår databehandler, "
+    "med dataene lagret i EU. Derfra får vi dem på e-post, slik at vi kan svare deg og planlegge leveringene, "
+    "og du får en bekreftelse på vedbestillingen på e-post. "
+    "For å finne leveringsadressen og planlegge kjøreruten slår vi opp adressen hos Kartverket, "
+    "og ruten regnes ut med rutetjenesten OSRM, som bare får koordinatene (ikke navn, telefon eller e-post).")
 
 
 def redirect_page(to):

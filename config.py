@@ -8,13 +8,12 @@ SITE_URL = "https://folloes.no"
 
 BRAND = "Follo Bjørkeved"
 
-# Bestillinger sendes hit (via FormSubmit.co). Første bestilling utløser en
-# aktiverings-e-post til denne adressen som må bekreftes én gang.
-# Etter aktivering gir FormSubmit en tilfeldig kode (f.eks. "a1b2c3...") som kan
-# settes inn her i stedet for e-postadressen, slik at adressen ikke er synlig i kildekoden.
-ORDER_EMAIL = "amkleven@gmail.com"
-# Disse får en kopi av hver bestilling (FormSubmit _cc). Trenger ingen aktivering.
-ORDER_CC = ["post@min-eiendom.no"]
+# Appen Nettsideferdig tar imot vedbestillinger og henvendelser (kontaktskjemaet og garasjevask-kalkulatoren).
+# Den lagrer dem (data i EU), sender dem til oss på e-post og sender kunden bekreftelse på vedbestillingen.
+# Leveringsdagene, «Fullt»/«Ledig», ruten (Kartverket og OSRM) og prisene på levering og bæring bestemmes der.
+# Eiersiden (bestillinger, fulle dager, henvendelser) er appens admin: https://folloes.app.nettsideferdig.no/admin/
+# Testsiden bruker samme app (appen er i testmodus til prislisten er bekreftet).
+APP_URL = "https://folloes.app.nettsideferdig.no"
 
 COMPANY = {
     "legal_name": "Follo Eiendomsservice AS",
@@ -41,7 +40,8 @@ PRODUCT = {
     "diameter_cm": "5–12",
 }
 
-# Bæring, tillegg i kroner per sekk.
+# Bæring, tillegg i kroner per sekk. Teksten (andre verdi) må være nøyaktig lik navnet på tillegget i appen
+# (Oppsett → Levering), for skjemaet finner tillegget på navnet. «ingen» er ingen tillegg.
 CARRY_OPTIONS = [
     ("ingen", "Ingen bæring – settes ved innkjørsel", 0),
     ("ute-15", "Utendørs 0–15 meter", 12),
@@ -69,41 +69,16 @@ FREQUENCY_OPTIONS = [
 # Hjemlevering i kroner per bestilling (samme som gammel side). None = "avtales".
 DELIVERY_FEE = 499
 
-# Leveringsdager. Kunden velger dag i skjemaet. En dag blir «full» når de bestilte leveringene fyller tiden.
-# Tiden for en bestilling = kjøretid (tur/retur fra Ås) + lossing + lossing per sekk + bæring per sekk.
-# Ås har kort kjøretid, så der får vi plass til flere leveringer på samme dag.
+# Leveringsdager. Kunden velger dag i skjemaet. Hvilke dager som er ledige for adressen og bestillingen, avgjør appen
+# (APP_URL: kjøretid, lossing, bæring og plass per dag). Verdiene her brukes bare til dagene som vises før kunden har
+# skrevet adressen, og hvis appen ikke svarer. En dag appen ikke gir, er ikke ledig.
 DELIVERY_DAYS = {
     "weekdays": [1, 2],            # 1 = mandag, 2 = tirsdag (0 = søndag … 6 = lørdag)
-    "minutes_per_day": 5 * 60,     # tid satt av per leveringsdag
     "weeks_ahead": 4,              # hvor mange uker fram kunden kan velge
     "order_by_hour": 18,           # bestill senest kl. 18 dagen før
-    "unload_minutes": 10,          # lossing per bestilling (parkere, hilse på kunden osv.)
-    "unload_minutes_per_sack": 0.5, # minutter per sekk for å ta den ut av bilen, også uten bæring
-    "carry_minutes_per_sack": 0.5, # ekstra minutter per sekk når veden skal bæres
-    # Kjøretid tur/retur fra lageret i Ås, i minutter. Navnene må være de samme som i AREAS.
-    # Kalenderen regner ut den ekte ruten for hver dag. Disse tallene er bare anslaget før kunden har skrevet adressen,
-    # og reserven hvis adressen ikke finnes eller rutetjenesten ikke svarer.
-    "drive_minutes": {
-        "Ås": 20,
-        "Ski og Langhus": 35,
-        "Kolbotn og Oppegård": 50,
-        "Vestby og Son": 45,
-        "Drøbak": 45,
-        "Nesodden": 70,
-        "Enebakk": 60,
-        "Annet": 60,
-    },
-    # Dager dere ikke kjører (ferie o.l.), i formatet "ÅÅÅÅ-MM-DD". Helligdager regnes ut automatisk.
+    # Dager dere ikke kjører (ferie o.l.), i formatet "ÅÅÅÅ-MM-DD". Helligdager regnes ut automatisk. Sett dem også i appen.
     "closed": ["2026-12-28", "2026-12-29"],
-    # Kalenderen som teller bestillinger per dag (Google Apps Script, se kalender/README.md).
-    # Tom = alle mandager og tirsdager vises som ledige, og dere må legge fulle dager i "closed" selv.
-    "calendar_url": "https://script.google.com/macros/s/AKfycbywB7MTobGWc7yZpYMUrDLxELynBpAUuXCpgC6NCbZJJnPJa4iRA8Xc5tNjWBRhB_eL/exec",
 }
-
-# Serveren med databasen (Cloudflare Worker + D1, se server/README.md), f.eks. "https://folloes.<konto>.workers.dev".
-# Når den er satt, går vedbestillinger, kontaktskjemaet og eiersiden dit i stedet for til regnearket (calendar_url over).
-# FormSubmit brukes da bare som reserve hvis serveren ikke får sendt e-posten. Tom = som før.
-SERVER_URL = ""
 
 # Google Search Console-bekreftelse (meta-tag på forsiden).
 GOOGLE_SITE_VERIFICATION = ""  # Koden for follobjorkeved.no gjelder ikke folloes.no. Hent en ny i Search Console.
