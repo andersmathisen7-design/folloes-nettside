@@ -538,14 +538,34 @@
     if (data["E-post"]) data._replyto = data["E-post"];
     var b = form.querySelector("button[type=submit]");
     b.disabled = true; msg.className = "form-msg"; msg.textContent = "Sender …";
-    fetch(S.endpoint, {
-      method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify(data)
-    }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
-      .then(function (res) {
-        if (!res.ok || String(res.j.success) !== "true") throw new Error(res.j.message || "Feil");
-        track("contact_sent", { service: data["Gjelder"] });
-        location.href = (S.base || "") + "/takk-for-din-henvendelse/";
-      })
+    var sent = function (via) {
+      track("contact_sent", { service: data["Gjelder"] });
+      track("henvendelse_via:" + via);
+      location.href = (S.base || "") + "/takk-for-din-henvendelse/";
+    };
+    var formsubmit = function () {
+      return fetch(S.endpoint, {
+        method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify(data)
+      }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+        .then(function (res) { if (!res.ok || String(res.j.success) !== "true") throw new Error(res.j.message || "Feil"); });
+    };
+    // Med serveren (server/) lagres henvendelsen i databasen og sendes på e-post derfra. Er den lagret, men e-posten
+    // gikk ikke, prøver vi FormSubmit i tillegg, men kunden får takkesiden uansett (eieren ser den på eiersiden).
+    // Svarer ikke serveren, brukes FormSubmit som før.
+    var viaServer = !S.server ? Promise.reject(new Error("ingen server")) : fetch(S.server, {
+      method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "henvendelse", navn: data["Navn"], telefon: data["Telefon"], epost: data["E-post"],
+        gjelder: data["Gjelder"], melding: data["Melding"], side: data["Side"] })
+    }).then(function (r) { return r.json(); }).then(function (j) {
+      if (!j.ok) throw new Error(j.error || "Feil");
+      return j;
+    });
+    viaServer.then(function (j) {
+      if (j.mailed) return sent("server");
+      return formsubmit().then(function () { sent("server+formsubmit"); }, function () { sent("server"); });
+    }, function () {
+      return formsubmit().then(function () { sent("formsubmit"); });
+    })
       .catch(function (err) {
         b.disabled = false;
         var body = Object.keys(data).filter(function (k) { return k.charAt(0) !== "_" && data[k]; })

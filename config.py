@@ -100,6 +100,11 @@ DELIVERY_DAYS = {
     "calendar_url": "https://script.google.com/macros/s/AKfycbywB7MTobGWc7yZpYMUrDLxELynBpAUuXCpgC6NCbZJJnPJa4iRA8Xc5tNjWBRhB_eL/exec",
 }
 
+# Serveren med databasen (Cloudflare Worker + D1, se server/README.md), f.eks. "https://folloes.<konto>.workers.dev".
+# Når den er satt, går vedbestillinger, kontaktskjemaet og eiersiden dit i stedet for til regnearket (calendar_url over).
+# FormSubmit brukes da bare som reserve hvis serveren ikke får sendt e-posten. Tom = som før.
+SERVER_URL = ""
+
 # Google Search Console-bekreftelse (meta-tag på forsiden).
 GOOGLE_SITE_VERIFICATION = ""  # Koden for follobjorkeved.no gjelder ikke folloes.no. Hent en ny i Search Console.
 

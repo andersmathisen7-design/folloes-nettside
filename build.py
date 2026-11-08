@@ -32,6 +32,10 @@ DOMAIN = URL.split("//", 1)[-1]
 # TESTSIDE=1 lager en testversjon (GitHub Pages): ingen indeksering, ingen ekte leveringskalender, ingen GoatCounter,
 # og skjemaene går bare til ORDER_EMAIL (ikke kopi til firmaet).
 TEST = os.environ.get("TESTSIDE") == "1"
+# Serveren (server/) tar over for regnearket når SERVER_URL er satt.
+SERVER = "" if TEST else (os.environ.get("SERVER_URL") or getattr(C, "SERVER_URL", "") or "").rstrip("/")
+if SERVER:
+    C.DELIVERY_DAYS = dict(C.DELIVERY_DAYS, calendar_url=SERVER)
 if TEST:
     C.DELIVERY_DAYS = dict(C.DELIVERY_DAYS, calendar_url="")
     C.ORDER_CC = []
@@ -371,6 +375,7 @@ def site_js_config():
         "adsConversion": C.GADS_CONVERSION,
         "base": BASE,
         "days": C.DELIVERY_DAYS,
+        "server": SERVER,
     }
 
 
@@ -824,7 +829,10 @@ def page_takk():
 def page_admin():
     """Eiersiden: oversikt over bestillinger per leveringsdag. Dataene hentes fra kalenderen etter innlogging med passord."""
     cfg = {"calendarUrl": C.DELIVERY_DAYS.get("calendar_url", ""), "days": C.DELIVERY_DAYS,
-           "areas": [a["name"] for a in C.AREAS] + ["Annet"], "base": BASE}
+           "areas": [a["name"] for a in C.AREAS] + ["Annet"], "base": BASE, "server": bool(SERVER)}
+    connect = SERVER if SERVER else "https://script.google.com https://script.googleusercontent.com"
+    pw_hjelp = ("Passordet lages på serveren: <code>cd server &amp;&amp; npm run passord</code> (eller be Claude om det)." if SERVER
+                else "Passordet lager du i regnearket: menyen <strong>Vedlevering → Lag nytt passord til eiersiden</strong>.")
     return f"""<!doctype html>
 <html lang="nb">
 <head>
@@ -832,7 +840,7 @@ def page_admin():
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src https://script.google.com https://script.googleusercontent.com; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src {connect}; form-action 'none'; base-uri 'none'">
 <title>Bestillinger | {esc(C.BRAND)}</title>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/assets/style.css">
@@ -852,7 +860,7 @@ def page_admin():
   <div class="admin-loading" id="a-loading" role="status" hidden><span class="spinner" aria-hidden="true"></span>Henter bestillinger …</div>
   <form class="card admin-login" id="a-login" hidden>
     <h1>Logg inn</h1>
-    <p class="muted">Passordet lager du i regnearket: menyen <strong>Vedlevering → Lag nytt passord til eiersiden</strong>.</p>
+    <p class="muted">{pw_hjelp}</p>
     <input type="text" name="username" value="eier" autocomplete="username" hidden>
     <label for="a-key">Passord</label>
     <input id="a-key" type="password" autocomplete="current-password" required>
@@ -865,8 +873,9 @@ def page_admin():
       <div class="admin-tabs" role="tablist">
         <button type="button" role="tab" data-view="kommende" class="on">Kommende</button>
         <button type="button" role="tab" data-view="tidligere">Tidligere</button>
+        {'<button type="button" role="tab" data-view="henvendelser">Henvendelser <span class="pill" id="a-inq-n" hidden></span></button>' if SERVER else ""}
       </div>
-      <label class="check admin-toggle"><input type="checkbox" id="a-show-cancelled"> Vis avbestilte <span id="a-cancelled-n"></span></label>
+      <label class="check admin-toggle"><input type="checkbox" id="a-show-cancelled"> <span id="a-toggle-txt">Vis avbestilte</span> <span id="a-cancelled-n"></span></label>
       <p class="muted small" id="a-updated"></p>
     </div>
     <div id="a-stats" class="admin-stats"></div>
@@ -950,7 +959,7 @@ def page_personvern():
     <p><strong>Bestilling av ved:</strong> telefonnummeret ditt, e-postadressen din, leveringsadressen og det du skriver i meldingsfeltet. Vi bruker opplysningene bare til å behandle og levere bestillingen, og til å sende faktura.</p>
     <p>Rettslig grunnlag er avtale, eller tiltak du ber om før en avtale inngås (GDPR art. 6 nr. 1 b).</p>
     <h2>Hvem som behandler opplysningene</h2>
-    <p>Kontaktskjemaet sendes til oss på e-post gjennom tjenesten FormSubmit (formsubmit.co). {"Vedbestillinger lagres i et regneark hos Google, som sender bestillingen til oss på e-post og sender deg en bekreftelse, slik at vi kan planlegge leveringene. For å planlegge kjøreruten slår vi opp adressen hos Kartverket og sender koordinatene (ikke navn eller telefon) til rutetjenesten OSRM. Svarer ikke regnearket, sendes bestillingen via FormSubmit." if cal else "Det samme gjelder vedbestillinger."} Vi selger ikke opplysningene dine og deler dem ikke med andre.</p>
+    <p>{SERVER_PERSONVERN if SERVER else ("Kontaktskjemaet sendes til oss på e-post gjennom tjenesten FormSubmit (formsubmit.co). " + ("Vedbestillinger lagres i et regneark hos Google, som sender bestillingen til oss på e-post og sender deg en bekreftelse, slik at vi kan planlegge leveringene. For å planlegge kjøreruten slår vi opp adressen hos Kartverket og sender koordinatene (ikke navn eller telefon) til rutetjenesten OSRM. Svarer ikke regnearket, sendes bestillingen via FormSubmit." if cal else "Det samme gjelder vedbestillinger."))} Vi selger ikke opplysningene dine og deler dem ikke med andre.</p>
     <h2>Hvor lenge vi lagrer dem</h2>
     <p>Vi sletter opplysningene når de ikke lenger trengs. Unntaket er det bokføringsloven krever at vi tar vare på, som er 5 år.</p>
     <h2>Informasjonskapsler (cookies)</h2>
@@ -1717,6 +1726,12 @@ def main():
     write("site.webmanifest", manifest())
     write(".nojekyll", "")
     print(f"Bygget {len(indexable) + 5} sider til {OUT}/ for {URL}")
+
+
+SERVER_PERSONVERN = ("Henvendelser og vedbestillinger lagres i vår database hos Cloudflare, slik at vi kan svare deg og planlegge leveringene. "
+    "Vi får dem på e-post, og du får en bekreftelse på vedbestillingen. E-postene sendes gjennom tjenesten Resend. "
+    "For å planlegge kjøreruten slår vi opp adressen hos Kartverket og sender koordinatene (ikke navn eller telefon) til rutetjenesten OSRM. "
+    "Får vi ikke sendt e-posten, går skjemaet til oss gjennom tjenesten FormSubmit (formsubmit.co) i stedet.")
 
 
 def redirect_page(to):

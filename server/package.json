@@ -6,7 +6,8 @@
     "test": "node test/server.test.js",
     "dev": "wrangler dev --local",
     "deploy": "wrangler d1 migrations apply folloes --remote && wrangler deploy",
-    "passord": "node passord.mjs"
+    "passord": "node passord.mjs",
+    "importer": "node importer.mjs"
   },
   "devDependencies": {
     "wrangler": "4.42.0"

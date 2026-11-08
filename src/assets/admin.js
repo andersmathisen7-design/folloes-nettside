@@ -1,4 +1,4 @@
-// Eiersiden (/admin/): bestillinger per leveringsdag, hentet fra leveringskalenderen (kalender/kalender.gs).
+// Eiersiden (/admin/): bestillinger per leveringsdag og henvendelser, hentet fra serveren (server/) eller regnearket (kalender/kalender.gs).
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   var A = {};
@@ -20,7 +20,7 @@
     }
   };
   token = store.get();
-  var orders = [], plans = {}, depot = null, today = "", view = "kommende", fullDays = [];
+  var orders = [], plans = {}, depot = null, today = "", view = "kommende", fullDays = [], inquiries = null;
   // Avbestilte jobber skjules som standard. Valget huskes på enheten.
   var CKEY = "folloAdminShowCancelled", showCancelled = false;
   try { showCancelled = localStorage.getItem(CKEY) === "1"; } catch (e) {}
@@ -47,7 +47,8 @@
 
   var ERR = {
     passord: "Feil passord.", sperret: "For mange feil forsøk. Vent 15 minutter og prøv igjen.",
-    "ikke-satt-opp": "Passordet er ikke laget ennå. Åpne regnearket og velg Vedlevering → Lag nytt passord til eiersiden.",
+    "ikke-satt-opp": A.server ? "Passordet er ikke laget ennå. Kjør «npm run passord» i server-mappen (eller be Claude om det)." :
+      "Passordet er ikke laget ennå. Åpne regnearket og velg Vedlevering → Lag nytt passord til eiersiden.",
     token: "Du er logget ut. Logg inn igjen."
   };
 
@@ -73,6 +74,8 @@
         }
         orders = j.orders || []; plans = j.plans || {}; depot = j.depot || null; today = j.today || "";
         fullDays = j.fullDays || [];
+        if ($("a-inq-n")) { $("a-inq-n").hidden = !j.newInquiries; $("a-inq-n").textContent = j.newInquiries || ""; }
+        if (view === "henvendelser") return loadInquiries();
         $("a-login").hidden = true; $("a-app").hidden = false; $("a-actions").hidden = false;
         $("a-updated").textContent = "Oppdatert " + new Date().toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
         render();
@@ -91,7 +94,44 @@
     }).then(function (r) { return r.json(); });
   }
 
+  // Henvendelser fra kontaktskjemaet (bare med serveren).
+  function loadInquiries() {
+    return post({ action: "henvendelser" }).then(function (j) {
+      if (!j.ok) { if (j.error === "token") { store.clear(); return showLogin(ERR.token); } throw new Error(j.error); }
+      inquiries = j.inquiries || [];
+      $("a-login").hidden = true; $("a-app").hidden = false; $("a-actions").hidden = false;
+      $("a-updated").textContent = "Oppdatert " + new Date().toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
+      render();
+    }).catch(function () { $("a-updated").textContent = "Fikk ikke hentet henvendelsene. Prøv Oppdater."; });
+  }
+
+  function renderInquiries() {
+    $("a-stats").innerHTML = "";
+    $("a-toggle-txt").textContent = "Vis arkiverte";
+    var nArk = (inquiries || []).filter(function (h) { return h.status === "Arkivert"; }).length;
+    $("a-cancelled-n").textContent = nArk ? "(" + nArk + ")" : "";
+    var list = (inquiries || []).filter(function (h) { return showCancelled || h.status !== "Arkivert"; });
+    if (!list.length) { $("a-list").innerHTML = '<p class="card muted">Ingen henvendelser.</p>'; return; }
+    $("a-list").innerHTML = list.map(function (h) {
+      var btn = function (st, label, ghost) {
+        return '<button type="button" class="btn btn-sm' + (ghost ? " btn-ghost" : "") + '" data-inq="' + esc(h.id) + '" data-status="' + st + '">' + label + "</button>";
+      };
+      var btns = h.status === "Ny" ? btn("Besvart", "Merk som besvart") + btn("Arkivert", "Arkiver", true) : btn("Ny", "Angre", true);
+      return '<article class="card admin-order st-' + (h.status === "Ny" ? "ny" : "levert") + '">' +
+        '<div class="ao-head"><strong>' + esc(h.navn || "(uten navn)") + " · " + esc(h.gjelder || "Annet") + "</strong>" +
+        (h.status !== "Ny" ? '<span class="pill">' + esc(h.status) + "</span>" : "") + "</div>" +
+        "<p>" + (h.telefon ? '<a href="tel:' + esc(h.telefon.replace(/\s/g, "")) + '">📞 ' + esc(h.telefon) + "</a> &nbsp; " : "") +
+        (h.epost ? '<a href="mailto:' + esc(h.epost) + "?subject=" + encodeURIComponent("Sv: " + (h.gjelder || "henvendelse")) + '">✉️ ' + esc(h.epost) + "</a>" : "") + "</p>" +
+        '<p class="ao-msg">💬 ' + esc(h.melding).replace(/\n/g, "<br>") + "</p>" +
+        '<p class="muted small">Sendt ' + esc(h.registrert) + (h.side ? " fra " + esc(h.side) : "") + "</p>" +
+        '<div class="ao-btns">' + btns + "</div></article>";
+    }).join("");
+  }
+
   function render() {
+    document.body.classList.toggle("vis-henvendelser", view === "henvendelser");
+    if (view === "henvendelser") return renderInquiries();
+    $("a-toggle-txt").textContent = "Vis avbestilte";
     var upcoming = view === "kommende";
     var inView = orders.filter(function (o) { return upcoming ? o.date >= today : o.date < today; });
     var nCancelled = inView.filter(function (o) { return o.status === "Avbestilt"; }).length;
@@ -170,6 +210,7 @@
     var btns = !done ? btn("Levert", "Betalt og levert", true) + btn("Levert", "Bare levert", false, true) + btn("Avbestilt", "Avbestill", false, true) :
       (o.status === "Levert" && !o.paid ? btn("Levert", "Marker som betalt", true) : "") + btn("Ny", "Angre", false, true);
     if (o.status !== "Avbestilt") btns += '<button type="button" class="btn btn-sm btn-ghost" data-sacks="' + esc(o.id) + '">Endre sekker</button>';
+    if (A.server && !done) btns += '<button type="button" class="btn btn-sm btn-ghost" data-move="' + esc(o.id) + '">Flytt dag</button>';
     return '<article class="card admin-order st-' + esc(o.status.toLowerCase()) + '">' +
       '<div class="ao-head"><strong>' + (stop ? stop.nr + '. ' : "") + esc(o.name || o.address || o.phone || "(uten navn)") + '</strong>' +
       (done ? '<span class="pill' + (o.status === "Levert" && !o.paid ? " pill-unpaid" : "") + '">' + esc(pill) + '</span>' : "") + '</div>' +
@@ -190,6 +231,16 @@
     if (f) return setFull(f, f.dataset.date, f.dataset.full === "1");
     var k = e.target.closest("button[data-sacks]");
     if (k) return openSacks(k.dataset.sacks);
+    var mv = e.target.closest("button[data-move]");
+    if (mv) return moveOrder(mv);
+    var iq = e.target.closest("button[data-inq]");
+    if (iq) {
+      iq.disabled = true; iq.innerHTML = SPIN + "Lagrer …";
+      return post({ action: "henvendelse-status", id: iq.dataset.inq, status: iq.dataset.status }).then(function (j) {
+        if (!j.ok) alert(ERR[j.error] || "Kunne ikke lagre: " + (j.error || "ukjent feil"));
+        return load();
+      }).catch(function () { alert("Fikk ikke kontakt med serveren."); load(); });
+    }
     var b = e.target.closest("button[data-status]");
     if (!b) return;
     var st = b.dataset.status;
@@ -200,6 +251,22 @@
       return load();
     }).catch(function () { alert("Fikk ikke kontakt med kalenderen."); load(); });
   });
+
+  // Flytt en levering til en annen dag (før: endre datoen i regnearket).
+  function moveOrder(b) {
+    var o = orders.filter(function (x) { return x.id === b.dataset.move; })[0];
+    if (!o) return;
+    var ny = prompt("Ny leveringsdag for " + (o.name || o.address || o.phone || "bestillingen") + " (ÅÅÅÅ-MM-DD):", o.date);
+    if (ny == null) return;
+    ny = ny.trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(ny)) { alert("Skriv datoen som ÅÅÅÅ-MM-DD, f.eks. " + o.date + "."); return; }
+    if (ny === o.date) return;
+    b.disabled = true; b.innerHTML = SPIN + "Lagrer …";
+    post({ action: "dato", id: o.id, date: ny }).then(function (j) {
+      if (!j.ok) alert(ERR[j.error] || "Kunne ikke lagre: " + (j.error || "ukjent feil"));
+      return load();
+    }).catch(function () { alert("Fikk ikke kontakt med serveren."); load(); });
+  }
 
   // Endre antall sekker: først nytt tall, så «Er du sikker?» før noe lagres.
   // Tiden justeres med forskjellen i lossing/bæring, så kjøretiden og eventuelle faste minutter blir som før.
@@ -273,6 +340,7 @@
     b.addEventListener("click", function () {
       view = b.dataset.view;
       document.querySelectorAll(".admin-tabs button").forEach(function (x) { x.classList.toggle("on", x === b); });
+      if (view === "henvendelser" && !inquiries) { $("a-list").innerHTML = '<p class="card muted">' + SPIN + "Henter henvendelser …</p>"; return loadInquiries(); }
       render();
     });
   });

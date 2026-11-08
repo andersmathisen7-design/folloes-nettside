@@ -47,4 +47,5 @@ Se **[LANSERING.md](LANSERING.md)**: hva som er gjort, hva som skjer på lanseri
 - `./hent-ved.sh` henter nye endringer fra follobjorkeved.no (repoet ved-folle-eiendom). Sist hentet: `.ved-synk`.
 - `python3 lag-omdirigering.py` lager omdirigeringssiden for follobjorkeved.no i `public-omdirigering/`.
 - Kontaktskjemaet bruker samme FormSubmit-adresse som vedbestillingene (`ORDER_EMAIL`, kopi til `ORDER_CC`).
-- Tester: se `tests/README.md`.
+- **Database:** `server/` er serveren med databasen for bestillinger og henvendelser (Cloudflare Worker + D1). Se `server/README.md`. Den tas i bruk ved å sette `SERVER_URL` i `config.py`.
+- Tester: se `tests/README.md` og `cd server && npm test`.

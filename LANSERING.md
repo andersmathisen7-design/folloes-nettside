@@ -21,6 +21,21 @@ I dag går folloes.no til WordPress (217.170.205.89), og follobjorkeved.no ligge
 2. 👤 **Ta en sikkerhetskopi av WordPress-siden** hvis dere vil ha den (hos den som drifter folloes.no i dag). Den slutter å vises når DNS endres.
 3. 👤 **Si opp WordPress-hostingen** først *etter* lanseringen.
 
+## Database for bestillinger og henvendelser (kan gjøres før eller etter lanseringen)
+
+Bestillingene flytter fra Google-regnearket til en database hos Cloudflare (`server/`, se `server/README.md`).
+Kontaktskjemaet og garasjevask lagres der også, og vises under **Henvendelser** på eiersiden.
+
+| # | Hvem | Hva |
+|---|---|---|
+| D1 | 👤 | Lag Cloudflare-konto, og gi Claude en API-nøkkel (malen «Edit Cloudflare Workers» + D1 Edit). Claude ber om den i et sikkert skjema. |
+| D2 | 🤖 | Lag databasen, publiser serveren, lag passord til eiersiden. |
+| D3 | 👤 | Lag Resend-konto, legg til domenet folloes.no, og legg inn DNS-postene hos Domeneshop. Legg API-nøkkelen inn som hemmelighet `RESEND_API_KEY` i Cloudflare. Til dette er gjort, går e-posten gjennom FormSubmit som før. |
+| D4 | 🤖 | Flytt bestillingene fra regnearket (Claude kan lese det fra Google Drive), og sett `SERVER_URL` i `config.py`. Fulle dager settes på nytt på eiersiden. |
+| D5 | 🤖 | Publiser nettsiden, og test en bestilling og en henvendelse. Kjør importen én gang til, så bestillinger som kom inn i regnearket i mellomtiden, blir med. |
+
+Regnearket blir stående som sikkerhetskopi. Kalenderskriptet trengs ikke lenger, så punkt 9 under (CLASPRC_JSON) faller bort.
+
 ## Lanseringsdagen (rekkefølgen er viktig)
 
 | # | Hvem | Hva |
@@ -33,7 +48,7 @@ I dag går folloes.no til WordPress (217.170.205.89), og follobjorkeved.no ligge
 | 6 | 🤖 | follobjorkeved.no: legg omdirigeringssiden på `gh-pages` i repoet ved-folle-eiendom, og skru av den gamle publiseringen der. DNS for follobjorkeved.no trenger ingen endring. |
 | 7 | 👤 | **Domeneshop → garasjevasken.no og garasjevask.no → Videresending:** til `https://folloes.no/garasjevask/`, permanent (301). |
 | 8 | 🤖 | Slå på automatisk publisering (push-linjene i `pages.yml`), og flytt den ukentlige jobben og kalenderskriptet hit. |
-| 9 | 👤 | **GitHub → folloes-nettside → Settings → Secrets → Actions:** legg inn `CLASPRC_JSON` (samme verdi som i ved-folle-eiendom), så kalenderskriptet kan publiseres herfra. |
+| 9 | 👤 | Bare hvis regnearket fortsatt brukes (databasen ikke er tatt i bruk): **GitHub → folloes-nettside → Settings → Secrets → Actions:** legg inn `CLASPRC_JSON` (samme verdi som i ved-folle-eiendom). |
 | 10 | 👤 | **Google Search Console:** legg til domenet folloes.no (TXT-post hos Domeneshop), send inn `https://folloes.no/sitemap.xml`, og be om indeksering av forsiden og `/salg-av-bjorkeved/`. Gi meg koden, så legger jeg den inn (`GOOGLE_SITE_VERIFICATION`) hvis du heller vil bruke meta-tag. |
 | 11 | 👤 | **Bing Webmaster Tools:** importer folloes.no fra Search Console. |
 | 12 | 👤 | **Google-bedriftsprofilen og katalogene** (Gule Sider, 1881, Proff, Vednett osv.): bytt nettsiden til `https://folloes.no/salg-av-bjorkeved/` for veden og `https://folloes.no/` for firmaet. |

@@ -353,6 +353,12 @@ textarea.embed { width: 100%; font-family: ui-monospace, Menlo, Consolas, monosp
 .admin-tabs { display: flex; gap: 4px; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 4px; }
 .admin-tabs button { border: 0; background: none; font: inherit; font-weight: 600; padding: .35em 1em; border-radius: 999px; cursor: pointer; color: var(--ink); }
 .admin-tabs button.on { background: var(--green); color: #fff; }
+@media (max-width: 480px) {
+  .admin-tabs { width: 100%; }
+  .admin-tabs button { flex: 1; padding: .35em .5em; font-size: .9rem; }
+}
+.admin-tabs .pill { margin-left: 4px; }
+body.admin.vis-henvendelser .admin-add { display: none; }
 .admin-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 14px; }
 .admin-stats:empty { display: none; }
 .admin-stats div { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; }
