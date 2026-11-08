@@ -7,8 +7,8 @@ workers_dev = true
 [[d1_databases]]
 binding = "DB"
 database_name = "folloes"
-# Settes når databasen er laget (npx wrangler d1 create folloes). Står den tom, virker bare lokal testing.
-database_id = "00000000-0000-0000-0000-000000000000"
+# Databasen ligger i EU (jurisdiction eu), laget 8. nov. 2026.
+database_id = "77586b09-8bd2-47dc-99a1-92b92724f27b"
 migrations_dir = "migrations"
 
 [vars]

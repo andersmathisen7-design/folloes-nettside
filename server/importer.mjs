@@ -50,7 +50,8 @@ function dato(v) {
 }
 function tidspunkt(v) {
   const d = dato(v);
-  const t = String(v || "").match(/(\d{1,2})[:.](\d{2})(?::\d{2})?\s*$/);
+  // Klokkeslett til slutt, f.eks. «16.10.2026 kl. 23.36.23» (slik Google Sheets skriver det på norsk) eller «10:00».
+  const t = String(v || "").match(/(?:kl\.?\s*|\s)(\d{1,2})[:.](\d{2})(?:[:.]\d{2})?\s*$/);
   return d ? d + (t ? ` ${t[1].padStart(2, "0")}:${t[2]}` : " 00:00") : "";
 }
 const tall = (v) => { const s = String(v || "").trim().replace(/\s/g, "").replace(",", "."); return s === "" || isNaN(Number(s)) ? null : Number(s); };
