@@ -251,7 +251,7 @@
       hol = Object.assign(holidays(today.getFullYear()), holidays(today.getFullYear() + 1));
     for (var n = 1; n <= (D.weeks_ahead || 4) * 7; n++) {
       var d = addDays(today, n);
-      if ((D.weekdays || [1, 2]).indexOf(d.getDay()) < 0 || hol[iso(d)] || closed[iso(d)]) continue;
+      if ((D.weekdays || [1, 5]).indexOf(d.getDay()) < 0 || hol[iso(d)] || closed[iso(d)]) continue;
       // Bestill senest kl. order_by_hour dagen før.
       var cutoff = addDays(d, -1); cutoff.setHours(D.order_by_hour == null ? 18 : D.order_by_hour);
       if (now < cutoff) out.push(iso(d));

@@ -21,18 +21,18 @@ I dag går folloes.no til WordPress (217.170.205.89), og follobjorkeved.no ligge
 2. 👤 **Ta en sikkerhetskopi av WordPress-siden** hvis dere vil ha den (hos den som drifter folloes.no i dag). Den slutter å vises når DNS endres.
 3. 👤 **Si opp WordPress-hostingen** først *etter* lanseringen.
 
-## Database for bestillinger og henvendelser (kan gjøres før eller etter lanseringen)
+## Bestillinger og henvendelser: appen Nettsideferdig (14. nov. 2026)
 
-Bestillingene flytter fra Google-regnearket til en database hos Cloudflare (`server/`, se `server/README.md`).
-Kontaktskjemaet og garasjevask lagres der også, og vises under **Henvendelser** på eiersiden.
+Vedbestillingen, kontaktskjemaet og garasjevask går til appen (`APP_URL` i `config.py`, `folloes.app.nettsideferdig.no`).
+Alt styres i admin: https://folloes.app.nettsideferdig.no/admin. Varsler om bestillinger og henvendelser går til
+`post@min-eiendom.no`. Den egne serveren (`server/`, Cloudflare D1) og FormSubmit er fjernet.
 
 | # | Hvem | Hva |
 |---|---|---|
-| D1 | 👤 | Lag Cloudflare-konto, og gi Claude en API-nøkkel (malen «Edit Cloudflare Workers» + D1 Edit). Claude ber om den i et sikkert skjema. |
-| D2 | 🤖 | Lag databasen, publiser serveren, lag passord til eiersiden. |
-| D3 | 👤 | Lag Resend-konto, legg til domenet folloes.no, og legg inn DNS-postene hos Domeneshop. Legg API-nøkkelen inn som hemmelighet `RESEND_API_KEY` i Cloudflare. Til dette er gjort, går e-posten gjennom FormSubmit som før. |
-| D4 | 🤖 | Flytt bestillingene fra regnearket (Claude kan lese det fra Google Drive), og sett `SERVER_URL` i `config.py`. Fulle dager settes på nytt på eiersiden. |
-| D5 | 🤖 | Publiser nettsiden, og test en bestilling og en henvendelse. Kjør importen én gang til, så bestillinger som kom inn i regnearket i mellomtiden, blir med. |
+| A1 | 👤 | Inviter andersmathisen7@gmail.com som eier i admin (Tilgang), så Claude kan sette opp resten. |
+| A2 | 🤖 | Priser, bæring, leveringsdager (mandag og fredag, 7,5 timer), stengte dager og varsler i admin. |
+| A3 | 🤖 | Importer bestillingene fra regnearket (Claude leser det fra Google Drive). Én gang før byttet og én gang rett etter. |
+| A4 | 🤖 | Test en bestilling og en henvendelse mot appen i testmodus, så slå testmodus av. |
 
 Regnearket blir stående som sikkerhetskopi. Kalenderskriptet trengs ikke lenger, så punkt 9 under (CLASPRC_JSON) faller bort.
 

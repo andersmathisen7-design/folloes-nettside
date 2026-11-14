@@ -73,7 +73,8 @@ DELIVERY_FEE = 499
 # (APP_URL: kjøretid, lossing, bæring og plass per dag). Verdiene her brukes bare til dagene som vises før kunden har
 # skrevet adressen, og hvis appen ikke svarer. En dag appen ikke gir, er ikke ledig.
 DELIVERY_DAYS = {
-    "weekdays": [1, 2],            # 1 = mandag, 2 = tirsdag (0 = søndag … 6 = lørdag)
+    "weekdays": [1, 5],            # 1 = mandag, 5 = fredag (0 = søndag … 6 = lørdag)
+    "minutes_per_day": 450,         # tid satt av per leveringsdag: hele dagen = 7,5 timer
     "weeks_ahead": 4,              # hvor mange uker fram kunden kan velge
     "order_by_hour": 18,           # bestill senest kl. 18 dagen før
     # Dager dere ikke kjører (ferie o.l.), i formatet "ÅÅÅÅ-MM-DD". Helligdager regnes ut automatisk. Sett dem også i appen.
@@ -111,7 +112,7 @@ AREAS = [
         "kommune": "Nordre Follo kommune",
         "places": ["Ski sentrum", "Langhus", "Siggerud", "Kråkstad", "Skotbu", "Finstadjordet", "Hebekk"],
         "postnr": "1400–1409",
-        "intro": "Ski og Langhus ligger rett ved lageret vårt i Ås. Vi kjører ut mandag og tirsdag, og hit er det en kort tur.",
+        "intro": "Ski og Langhus ligger rett ved lageret vårt i Ås. Vi kjører ut hele dagen mandag og fredag, og hit er det en kort tur.",
     },
     {
         "slug": "ved-kolbotn",
@@ -171,7 +172,7 @@ FAQ = [
     ("Kan dere bære veden inn?",
      "Ja. Vi kan sette sekkene i garasjen, i kjelleren eller helt opp til 6. etasje. Du velger dette i bestillingsskjemaet."),
     ("Hvordan bestiller jeg?",
-     "Fyll ut skjemaet på siden og velg leveringsdag. Vi kjører ut på mandager og tirsdager. Du får bekreftelse på e-post med en gang. Du kan også ringe oss på {phone}."),
+     "Fyll ut skjemaet på siden og velg leveringsdag. Vi kjører ut hele dagen på mandager og fredager. Du får bekreftelse på e-post med en gang. Du kan også ringe oss på {phone}."),
     ("Har dere vedabonnement?",
      "Ja. Velg «Fast levering» i bestillingsskjemaet, så kommer vi med samme antall sekker hver 2., 4. eller 6. uke gjennom vinteren. Hver levering koster det samme som en vanlig bestilling, og du betaler for én levering om gangen. Du slipper å huske å bestille, og du kan endre eller stoppe når du vil ved å ringe {phone}."),
     ("Hvordan betaler jeg?",

@@ -52,5 +52,5 @@ Se **[LANSERING.md](LANSERING.md)**: hva som er gjort, hva som skjer på lanseri
   - Kontaktskjemaet og garasjevask-kalkulatoren: `POST /api/henvendelse`.
   - Eiersiden (bestillinger, fulle dager, henvendelser) er appens admin. `/admin/` på nettstedet sender dit.
   - `APP_URL=http://127.0.0.1:8790 python3 build.py` bygger mot en lokal (falsk) app.
-- `server/` og `kalender/` (Cloudflare Worker + D1 og Google-regnearket) brukes ikke lenger av nettsiden.
+- `kalender/` (Google-regnearket) brukes ikke lenger av nettsiden. Bestillinger og henvendelser går til appen Nettsideferdig (`APP_URL`).
 - Tester: se `tests/README.md` og `cd server && npm test`.
